@@ -15,15 +15,36 @@ Standalone test harness for the in-browser voice path of the Influx AI candidate
 
 ## Running the voice lab
 
-Must be served over `http://` — ES module imports and model downloads don't work from `file://`.
+### Prerequisites
+
+- **Node.js** (any recent version) — for `npx serve`, OR
+- **Python 3** — for `python -m http.server`
+- **Chrome** (recommended) — required for WebGPU; Firefox works on WASM only
+- Internet connection on first run (model download, ~40MB, cached after)
+
+### Setup
 
 ```bash
-cd voice-lab
-npx serve .
-# or: python -m http.server 8080
+# 1. Clone the repo
+git clone https://github.com/ahmadzulfahmi-influx/influx-ai-assessment.git
+cd influx-ai-assessment/voice-lab
+
+# 2. Serve it (pick one)
+npx serve .          # → opens at http://localhost:3000
+# or
+python -m http.server 8080   # → opens at http://localhost:8080
 ```
 
-Open in **Chrome**. Try the **WebGPU toggle** first (faster). First run downloads the Whisper model (~40MB, cached after). Record a ~15s clip — all four panels populate after transcription.
+Must be served over `http://` — ES module imports and model downloads don't work from `file://`.
+
+### First run
+
+1. Open the URL above in Chrome
+2. Select a backend (try **WebGPU** first) and model (`whisper-tiny.en` is fastest)
+3. Click **Record** — the browser will ask for microphone permission, click **Allow**
+4. Speak naturally for ~15 seconds, then click **Stop**
+5. Wait for transcription (first run also downloads the model — progress bar shows)
+6. All four panels populate with results
 
 > **Do not add `Cross-Origin-Embedder-Policy: require-corp`** — it blocks the CDN import and Hugging Face model download. Serve plainly.
 
