@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Voice Capability Lab — Influx AI Assessment</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --tan:#FF4A00;--salmon:#F38454;--esp:#201B13;--cocoa:#4E403B;
+    --sand:#E9E5D6;--bone:#F0F7EF;--snow:#FFFFFF;--char:#55524E;
+    --mocha:#75665F;--hazel:#D3C5BF;--forest:#354A0A;--olive:#587322;
+    --sun:#FFBB00;--denim:#547099;--red:#8C152F;--alice:#DCE6F5;
+    --font:'Inter',system-ui,sans-serif;--mono:'JetBrains Mono',monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:var(--font);background:var(--bone);color:var(--esp);line-height:1.5;padding:24px 16px 60px}
+  .wrap{max-width:880px;margin:0 auto}
+
+  header{margin-bottom:20px}
+  header h1{font-size:1.4rem;font-weight:700;display:flex;align-items:center;gap:10px}
+  .logo{width:30px;height:30px;border-radius:8px;background:var(--tan);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px}
+  header p{color:var(--char);font-size:.85rem;margin-top:4px}
+  .lab-note{background:#FFF6E8;border:1px solid var(--sun);border-radius:10px;padding:11px 14px;font-size:.8rem;color:var(--cocoa);margin-top:12px}
+  .lab-note b{color:var(--esp)}
+
+  .controls{background:var(--snow);border:1px solid var(--hazel);border-radius:14px;padding:18px;margin:18px 0;display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end}
+  .ctl-group{display:flex;flex-direction:column;gap:6px}
+  .ctl-group label{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--char)}
+  .seg{display:inline-flex;border:1.5px solid var(--hazel);border-radius:9px;overflow:hidden}
+  .seg button{border:none;background:var(--snow);padding:8px 14px;font-family:var(--font);font-size:.82rem;font-weight:600;color:var(--char);cursor:pointer;transition:all .15s}
+  .seg button.on{background:var(--denim);color:#fff}
+  .seg button:disabled{opacity:.4;cursor:not-allowed}
+  select{border:1.5px solid var(--hazel);border-radius:9px;padding:8px 12px;font-family:var(--font);font-size:.82rem;font-weight:600;color:var(--esp);background:var(--snow);cursor:pointer}
+
+  .rec-btn{margin-left:auto;display:inline-flex;align-items:center;gap:9px;border:none;border-radius:11px;background:var(--tan);color:#fff;padding:12px 22px;font-family:var(--font);font-size:.92rem;font-weight:700;cursor:pointer;transition:all .15s}
+  .rec-btn:hover:not(:disabled){background:#e03e00}
+  .rec-btn:disabled{background:var(--hazel);cursor:not-allowed}
+  .rec-btn.recording{background:var(--red);animation:pulse 1.1s ease-in-out infinite}
+  .rec-dot{width:11px;height:11px;border-radius:50%;background:#fff}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(140,21,47,.5)}55%{box-shadow:0 0 0 10px rgba(140,21,47,0)}}
+
+  .status{font-size:.82rem;color:var(--char);min-height:20px;margin:4px 2px 0;font-weight:500}
+  .status.err{color:var(--red);font-weight:600}
+  .progress{height:7px;background:var(--sand);border-radius:4px;overflow:hidden;margin:10px 0 0;display:none}
+  .progress.show{display:block}
+  .progress-bar{height:100%;width:0;background:var(--denim);border-radius:4px;transition:width .25s}
+
+  .results{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .panel{background:var(--snow);border:1px solid var(--hazel);border-radius:14px;padding:16px;opacity:.5;transition:opacity .3s}
+  .panel.active{opacity:1}
+  .panel.full{grid-column:1 / -1}
+  .panel h2{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--char);margin-bottom:12px;display:flex;align-items:center;gap:7px}
+  .badge{font-size:.62rem;font-weight:700;padding:2px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.04em}
+  .badge.l1{background:var(--alice);color:var(--denim)}
+  .badge.l2{background:#E7F0DA;color:var(--olive)}
+  .badge.l3{background:#FFF1D6;color:#9a7000}
+  .badge.l4{background:var(--sand);color:var(--cocoa)}
+
+  .metric{display:flex;justify-content:space-between;align-items:baseline;padding:7px 0;border-bottom:1px dashed var(--hazel);font-size:.86rem}
+  .metric:last-child{border-bottom:none}
+  .metric .k{color:var(--char)}
+  .metric .v{font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
+  .v.mono{font-family:var(--mono);font-size:.82rem}
+  .ok{color:var(--olive)}.warn{color:#b58900}.bad{color:var(--red)}.muted{color:var(--mocha)}
+
+  .transcript-box{background:var(--bone);border:1px solid var(--hazel);border-radius:10px;padding:12px;font-size:.9rem;line-height:1.6;min-height:54px;color:var(--esp)}
+  .transcript-box .ph{color:var(--mocha);font-style:italic}
+  .filler-hi{background:#FFE0CC;border-radius:3px;padding:0 2px;font-weight:600}
+
+  .verdict{display:flex;align-items:center;gap:12px;padding:12px;border-radius:10px;margin-bottom:12px;border:1.5px solid}
+  .verdict.strong{background:#EDF5DC;border-color:var(--olive)}
+  .verdict.adequate{background:#FFF6E8;border-color:var(--sun)}
+  .verdict.limited{background:#FBE8EC;border-color:var(--red)}
+  .verdict.none{background:var(--bone);border-color:var(--hazel)}
+  .verdict-label{font-size:1.05rem;font-weight:700;text-transform:capitalize}
+  .verdict-sub{font-size:.74rem;color:var(--char)}
+
+  .conf-flag{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:9px;font-size:.8rem;font-weight:600;margin-bottom:10px}
+  .conf-flag.high{background:#EDF5DC;color:var(--forest)}
+  .conf-flag.reduced{background:#FFF1D6;color:#9a7000}
+  .fairness{font-size:.72rem;color:var(--mocha);line-height:1.5;margin-top:6px;padding-top:10px;border-top:1px dashed var(--hazel)}
+  .fairness b{color:var(--cocoa)}
+
+  .diag-row{display:flex;align-items:center;gap:9px;font-size:.88rem;padding:6px 0}
+  .diag-icon{width:18px;text-align:center;font-weight:700}
+  .thresholds{font-size:.72rem;color:var(--mocha);margin-top:10px;line-height:1.6}
+  code{font-family:var(--mono);font-size:.78rem;background:var(--bone);padding:1px 5px;border-radius:4px}
+  @media(max-width:680px){.results{grid-template-columns:1fr}.controls{flex-direction:column;align-items:stretch}.rec-btn{margin-left:0;justify-content:center}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1><span class="logo">◉</span> Voice Capability Lab</h1>
+    <p>Standalone test harness for the AI-assessment voice path — in-browser Whisper + the four signal layers. Not the candidate demo.</p>
+    <div class="lab-note">
+      <b>What this lab answers:</b> can in-browser Whisper deliver <b>per-word timestamps at acceptable latency</b> on this hardware? The ASR Diagnostic panel reports the truth for your machine/backend. If word timestamps don't come back, Layer 2 degrades to a wall-clock estimate and says so — that's a finding, not a failure.
+    </div>
+  </header>
+
+  <section class="controls">
+    <div class="ctl-group">
+      <label>Backend</label>
+      <div class="seg" id="seg-backend">
+        <button data-backend="wasm" class="on">WASM (CPU)</button>
+        <button data-backend="webgpu">WebGPU</button>
+      </div>
+    </div>
+    <div class="ctl-group">
+      <label>Model</label>
+      <select id="model-select">
+        <option value="Xenova/whisper-tiny.en">whisper-tiny.en (~40MB)</option>
+        <option value="Xenova/whisper-base.en">whisper-base.en (~75MB)</option>
+      </select>
+    </div>
+    <button class="rec-btn" id="rec-btn"><span class="rec-dot"></span><span id="rec-label">Record</span></button>
+  </section>
+  <div class="status" id="status">Ready. Pick a backend &amp; model, then record a ~15s answer.</div>
+  <div class="progress" id="progress"><div class="progress-bar" id="progress-bar"></div></div>
+
+  <section class="results">
+    <!-- ASR Diagnostic — the B0 finding -->
+    <div class="panel full" id="p-asr">
+      <h2><span class="badge l1">ASR Diagnostic</span> in-browser Whisper</h2>
+      <div class="metric"><span class="k">Backend used</span><span class="v mono" id="d-backend">—</span></div>
+      <div class="metric"><span class="k">Model</span><span class="v mono" id="d-model">—</span></div>
+      <div class="metric"><span class="k">Per-word timestamps</span><span class="v" id="d-words">—</span></div>
+      <div class="metric"><span class="k">Transcription latency</span><span class="v" id="d-latency">—</span></div>
+      <div class="metric"><span class="k">Audio decoded</span><span class="v mono" id="d-audio">—</span></div>
+    </div>
+
+    <!-- Layer 1 Transcript -->
+    <div class="panel full" id="p-l1">
+      <h2><span class="badge l1">Layer 1</span> Transcript (content → Prompt A/B/C, unchanged)</h2>
+      <div class="transcript-box" id="transcript"><span class="ph">Your transcript will appear here. Filler words are highlighted.</span></div>
+    </div>
+
+    <!-- Layer 2 Language -->
+    <div class="panel" id="p-l2">
+      <h2><span class="badge l2">Layer 2</span> Language</h2>
+      <div class="verdict none" id="verdict">
+        <div>
+          <div class="verdict-label" id="verdict-label">—</div>
+          <div class="verdict-sub" id="verdict-sub">proficiency verdict</div>
+        </div>
+      </div>
+      <div class="metric"><span class="k">Speaking rate</span><span class="v" id="m-wpm">—</span></div>
+      <div class="metric"><span class="k">Filler words</span><span class="v" id="m-filler">—</span></div>
+      <div class="metric"><span class="k">Pauses (&gt;0.5s)</span><span class="v" id="m-pauses">—</span></div>
+      <div class="metric"><span class="k">Vocabulary (TTR)</span><span class="v" id="m-ttr">—</span></div>
+      <div class="thresholds">
+        <code>strong</code>: WPM 100–170, filler &lt;2/min, TTR &gt;0.55 ·
+        <code>adequate</code>: WPM 80–200, filler &lt;4/min, TTR &gt;0.40 · else <code>limited</code>
+      </div>
+    </div>
+
+    <!-- Layer 3 + 4 diagnostics -->
+    <div class="panel" id="p-diag">
+      <h2><span class="badge l3">Layer 3</span><span class="badge l4">Layer 4</span> Capture diagnostics</h2>
+      <div class="conf-flag high" id="conf-flag" style="display:none"></div>
+      <div class="metric"><span class="k">Background noise (SNR)</span><span class="v" id="m-snr">—</span></div>
+      <div class="metric"><span class="k">Connection type</span><span class="v mono" id="m-conn">—</span></div>
+      <div class="metric"><span class="k">Downlink</span><span class="v" id="m-downlink">—</span></div>
+      <div class="metric"><span class="k">Round-trip (RTT)</span><span class="v" id="m-rtt">—</span></div>
+      <div class="metric"><span class="k">Microphone</span><span class="v mono" id="m-device">—</span></div>
+      <div class="metric"><span class="k">Capture sample rate</span><span class="v mono" id="m-srate">—</span></div>
+      <div class="fairness">
+        <b>Fairness contract:</b> Layers 3–4 are <b>diagnostic only</b>. They set <code>capture_confidence</code> (high / reduced) to inform the recruiter — they <b>never</b> alter the Layer 2 proficiency verdict or any content score. (Spec §13.6 / OD-15.)
+      </div>
+    </div>
+  </section>
+</div>
+
+<script type="module">
+import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3';
+
+// Allow remote model download (HF hub), disable local-only.
+env.allowLocalModels = false;
+
+/* ─── State ─────────────────────────────── */
+let backend = 'wasm';
+let transcriber = null;
+let loadedKey = '';            // `${model}@${backend}` of the currently loaded pipeline
+let recording = false;
+let mediaRecorder = null;
+let chunks = [];
+let stream = null;
+let recStart = 0;
+// Layer 3 SNR sampling
+let audioCtx = null, analyser = null, rmsTimer = null, rmsSamples = [];
+
+const $ = id => document.getElementById(id);
+const FILLERS = /^(um+|uh+|er+|ah+|like|basically|literally|so|actually|right)$/i;
+
+/* ─── Backend toggle ────────────────────── */
+$('seg-backend').addEventListener('click', e => {
+  const btn = e.target.closest('button');
+  if (!btn || recording) return;
+  backend = btn.dataset.backend;
+  [...$('seg-backend').children].forEach(b => b.classList.toggle('on', b === btn));
+});
+
+// Disable WebGPU option if unsupported.
+if (!navigator.gpu) {
+  const gpuBtn = $('seg-backend').querySelector('[data-backend="webgpu"]');
+  gpuBtn.disabled = true;
+  gpuBtn.title = 'WebGPU not available in this browser';
+}
+
+/* ─── Static hygiene (available pre-record) ─ */
+(function fillStaticHygiene(){
+  const c = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  $('m-conn').textContent     = c?.effectiveType ?? 'N/A';
+  $('m-downlink').textContent = c?.downlink != null ? c.downlink + ' Mbps' : 'N/A';
+  $('m-rtt').textContent      = c?.rtt != null ? c.rtt + ' ms' : 'N/A';
+})();
+
+/* ─── Record button ─────────────────────── */
+$('rec-btn').addEventListener('click', () => recording ? stopRecording() : startRecording());
+
+async function startRecording(){
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (err) {
+    setStatus('Microphone permission denied or unavailable. ' + err.message, true);
+    return;
+  }
+  // Layer 4: device label (available after permission)
+  const track = stream.getAudioTracks()[0];
+  $('m-device').textContent = track?.label || 'default mic';
+  const settings = track?.getSettings?.() || {};
+  $('m-srate').textContent = settings.sampleRate ? settings.sampleRate + ' Hz' : 'N/A';
+
+  // Layer 3: SNR sampling via AnalyserNode on the live stream
+  startSnrSampling(stream);
+
+  chunks = [];
+  mediaRecorder = new MediaRecorder(stream);
+  mediaRecorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+  mediaRecorder.onstop = onRecordingStopped;
+  mediaRecorder.start();
+  recStart = performance.now();
+  recording = true;
+  $('rec-btn').classList.add('recording');
+  $('rec-label').textContent = 'Stop';
+  setStatus('Recording… speak naturally, then click Stop.');
+}
+
+function stopRecording(){
+  if (!recording) return;
+  recording = false;
+  $('rec-btn').classList.remove('recording');
+  $('rec-label').textContent = 'Record';
+  mediaRecorder.stop();
+  stopSnrSampling();
+  stream.getTracks().forEach(t => t.stop());
+}
+
+/* ─── Layer 3: SNR sampling ─────────────── */
+function startSnrSampling(stream){
+  rmsSamples = [];
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  const src = audioCtx.createMediaStreamSource(stream);
+  analyser = audioCtx.createAnalyser();
+  analyser.fftSize = 2048;
+  src.connect(analyser);
+  const buf = new Uint8Array(analyser.fftSize);
+  rmsTimer = setInterval(() => {
+    analyser.getByteTimeDomainData(buf);
+    let sum = 0;
+    for (let i = 0; i < buf.length; i++){ const c = (buf[i] - 128) / 128; sum += c * c; }
+    rmsSamples.push(Math.sqrt(sum / buf.length));
+  }, 250);
+}
+function stopSnrSampling(){
+  clearInterval(rmsTimer); rmsTimer = null;
+  if (audioCtx){ audioCtx.close(); audioCtx = null; }
+}
+function computeSnr(){
+  if (rmsSamples.length < 4) return null;
+  const sorted = [...rmsSamples].sort((a,b) => a - b);
+  const pct = p => sorted[Math.min(sorted.length - 1, Math.floor(p * sorted.length))];
+  const noise = pct(0.10) || 1e-6;     // noise floor
+  const speech = pct(0.90) || 1e-6;    // speech level
+  return 20 * Math.log10(speech / Math.max(noise, 1e-6));
+}
+
+/* ─── On stop: decode → transcribe → metrics ─ */
+async function onRecordingStopped(){
+  const recMs = performance.now() - recStart;
+  const blob = new Blob(chunks, { type: chunks[0]?.type || 'audio/webm' });
+
+  // Decode + resample to 16kHz mono Float32 (Whisper's required input)
+  let audio, decodedRate;
+  try {
+    const ab = await blob.arrayBuffer();
+    const dctx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+    const decoded = await dctx.decodeAudioData(ab);
+    decodedRate = decoded.sampleRate;
+    audio = decoded.getChannelData(0);
+    dctx.close();
+  } catch (err) {
+    setStatus('Audio decode failed: ' + err.message, true);
+    return;
+  }
+  $('d-audio').textContent = `${(audio.length/decodedRate).toFixed(1)}s @ ${decodedRate}Hz`;
+
+  // Load pipeline (once per model+backend)
+  const model = $('model-select').value;
+  const key = `${model}@${backend}`;
+  if (key !== loadedKey){
+    try { await loadPipeline(model); }
+    catch (err){ setStatus('Model load failed on ' + backend + ': ' + err.message, true); return; }
+    loadedKey = key;
+  }
+
+  // Transcribe with word timestamps; measure latency
+  setStatus('Transcribing…');
+  const t0 = performance.now();
+  let output;
+  try {
+    output = await transcriber(audio, { return_timestamps: 'word', chunk_length_s: 30, stride_length_s: 5 });
+  } catch (err){
+    setStatus('Transcription failed: ' + err.message, true);
+    return;
+  }
+  const latencyMs = performance.now() - t0;
+
+  renderAll(output, latencyMs, recMs, model);
+  setStatus('Done. Adjust backend/model and record again to compare.');
+}
+
+async function loadPipeline(model){
+  setStatus(`Loading ${model} on ${backend}…`);
+  showProgress(true);
+  const opts = { progress_callback: onProgress };
+  if (backend === 'webgpu') { opts.device = 'webgpu'; opts.dtype = 'fp32'; }
+  transcriber = await pipeline('automatic-speech-recognition', model, opts);
+  showProgress(false);
+}
+function onProgress(p){
+  if (p.status === 'progress' && p.total){
+    $('progress-bar').style.width = Math.round(p.progress) + '%';
+    setStatus(`Downloading ${p.file?.split('/').pop() || 'model'}… ${Math.round(p.progress)}%`);
+  }
+}
+
+/* ─── Render ────────────────────────────── */
+function renderAll(output, latencyMs, recMs, model){
+  document.querySelectorAll('.panel').forEach(p => p.classList.add('active'));
+
+  // Extract words[] with timings. return_timestamps:'word' → output.chunks = [{text, timestamp:[s,e]}]
+  const rawChunks = Array.isArray(output.chunks) ? output.chunks : [];
+  const wordChunks = rawChunks
+    .filter(c => Array.isArray(c.timestamp) && c.timestamp[0] != null && c.timestamp[1] != null)
+    .map(c => ({ w: c.text.trim(), start: c.timestamp[0], end: c.timestamp[1] }))
+    .filter(c => c.w);
+  // Word-level when chunks ≈ word count (each chunk ~one token)
+  const tokenCount = (output.text.trim().match(/\S+/g) || []).length;
+  const hasWordTs = wordChunks.length > 0 && wordChunks.length >= tokenCount * 0.6;
+
+  // ─ ASR Diagnostic ─
+  $('d-backend').textContent = backend;
+  $('d-model').textContent = model.split('/').pop();
+  $('d-latency').textContent = (latencyMs/1000).toFixed(1) + 's';
+  $('d-latency').className = 'v ' + (latencyMs < 8000 ? 'ok' : latencyMs < 20000 ? 'warn' : 'bad');
+  $('d-words').innerHTML = hasWordTs
+    ? '<span class="ok">✓ YES — word-level</span>'
+    : '<span class="warn">✗ no — wall-clock fallback</span>';
+
+  // ─ Layer 1 Transcript (with filler highlight) ─
+  renderTranscript(output.text.trim());
+
+  // ─ Layer 2 Language ─
+  const words = (hasWordTs ? wordChunks.map(c => c.w) : (output.text.trim().match(/\S+/g) || []));
+  const cleanTokens = words.map(w => w.toLowerCase().replace(/[^a-z']/g,'')).filter(Boolean);
+  const fillerCount = cleanTokens.filter(w => FILLERS.test(w)).length;
+
+  // duration span: word timestamps if available, else wall-clock recording time
+  const spanSec = hasWordTs
+    ? Math.max(0.1, wordChunks[wordChunks.length-1].end - wordChunks[0].start)
+    : recMs / 1000;
+  const minutes = spanSec / 60;
+  const wpm = minutes > 0.05 ? Math.round(cleanTokens.length / minutes) : null;
+  const fillerRate = minutes > 0.05 ? +(fillerCount / minutes).toFixed(1) : null;
+  const ttr = cleanTokens.length ? +(new Set(cleanTokens).size / cleanTokens.length).toFixed(2) : null;
+
+  // pauses: only meaningful with word timestamps
+  let pauses = null, meanPause = null, maxPause = null;
+  if (hasWordTs && wordChunks.length > 1){
+    const gaps = [];
+    for (let i = 1; i < wordChunks.length; i++){
+      const g = wordChunks[i].start - wordChunks[i-1].end;
+      if (g > 0.5) gaps.push(g);
+    }
+    pauses = gaps.length;
+    if (gaps.length){ meanPause = +(gaps.reduce((a,b)=>a+b,0)/gaps.length).toFixed(2); maxPause = +Math.max(...gaps).toFixed(2); }
+  }
+
+  $('m-wpm').innerHTML    = wpm == null ? '<span class="muted">—</span>' : `${wpm} <span class="muted" style="font-weight:400">wpm</span>` + flag(wpm>=100&&wpm<=170?'ok':wpm>=80&&wpm<=200?'warn':'bad');
+  $('m-filler').innerHTML = fillerRate == null ? '<span class="muted">—</span>' : `${fillerCount} <span class="muted" style="font-weight:400">(${fillerRate}/min)</span>` + flag(fillerRate<2?'ok':fillerRate<4?'warn':'bad');
+  $('m-pauses').innerHTML = pauses == null
+    ? '<span class="muted">n/a (needs word ts)</span>'
+    : `${pauses}` + (meanPause!=null?` <span class="muted" style="font-weight:400">μ${meanPause}s · max${maxPause}s</span>`:'');
+  $('m-ttr').innerHTML    = ttr == null ? '<span class="muted">—</span>' : `${ttr}` + flag(ttr>0.55?'ok':ttr>0.40?'warn':'bad');
+
+  renderVerdict(wpm, fillerRate, ttr);
+
+  // ─ Layer 3 SNR ─
+  const snr = computeSnr();
+  $('m-snr').innerHTML = snr == null ? '<span class="muted">—</span>'
+    : `${snr.toFixed(1)} dB` + flag(snr>=15?'ok':snr>=10?'warn':'bad');
+
+  // ─ Layer 4 latency already in diag; refresh connection live ─
+  const c = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  $('m-conn').textContent     = c?.effectiveType ?? 'N/A';
+  $('m-downlink').textContent = c?.downlink != null ? c.downlink + ' Mbps' : 'N/A';
+  $('m-rtt').textContent      = c?.rtt != null ? c.rtt + ' ms' : 'N/A';
+
+  // ─ capture_confidence (diagnostic only) ─
+  renderConfidence(snr, c, latencyMs);
+}
+
+function flag(cls){
+  const sym = cls === 'ok' ? '●' : cls === 'warn' ? '▲' : '■';
+  return ` <span class="${cls}" style="font-size:.8em">${sym}</span>`;
+}
+
+function renderTranscript(text){
+  if (!text){ $('transcript').innerHTML = '<span class="ph">(no speech detected)</span>'; return; }
+  const html = text.split(/(\s+)/).map(tok => {
+    const clean = tok.toLowerCase().replace(/[^a-z']/g,'');
+    return clean && FILLERS.test(clean) ? `<span class="filler-hi">${tok}</span>` : tok;
+  }).join('');
+  $('transcript').innerHTML = html;
+}
+
+function renderVerdict(wpm, fillerRate, ttr){
+  const el = $('verdict'), label = $('verdict-label'), sub = $('verdict-sub');
+  el.className = 'verdict';
+  if (wpm == null || ttr == null){
+    el.classList.add('none'); label.textContent = '—'; sub.textContent = 'proficiency verdict'; return;
+  }
+  let v;
+  if (wpm>=100&&wpm<=170 && fillerRate<2 && ttr>0.55) v = 'strong';
+  else if (wpm>=80&&wpm<=200 && fillerRate<4 && ttr>0.40) v = 'adequate';
+  else v = 'limited';
+  el.classList.add(v);
+  label.textContent = v;
+  sub.textContent = 'Layer 2 proficiency — separate axis, only surfaced when English is job-relevant (OD-15)';
+}
+
+function renderConfidence(snr, conn, latencyMs){
+  const reasons = [];
+  if (snr != null && snr < 10) reasons.push('noisy (SNR<10dB)');
+  if (conn?.downlink != null && conn.downlink < 1) reasons.push('slow connection');
+  if (conn?.effectiveType && ['slow-2g','2g'].includes(conn.effectiveType)) reasons.push(conn.effectiveType);
+  if (latencyMs > 30000) reasons.push('slow transcription (weak device)');
+  const reduced = reasons.length > 0;
+  const el = $('conf-flag');
+  el.style.display = 'inline-flex';
+  el.className = 'conf-flag ' + (reduced ? 'reduced' : 'high');
+  el.innerHTML = reduced
+    ? `⚠ capture_confidence: REDUCED — ${reasons.join(', ')}`
+    : `✓ capture_confidence: HIGH`;
+}
+
+/* ─── helpers ───────────────────────────── */
+function setStatus(msg, isErr){ const s = $('status'); s.textContent = msg; s.className = 'status' + (isErr ? ' err' : ''); }
+function showProgress(on){ $('progress').classList.toggle('show', on); if (!on) $('progress-bar').style.width = '0'; }
+</script>
+</body>
+</html>

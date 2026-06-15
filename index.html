@@ -1,0 +1,2070 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Influx — AI Assessment Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<script src="https://kit.fontawesome.com/e972712a89.js" crossorigin="anonymous"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --tan:#FF4A00;--salmon:#F38454;--esp:#201B13;--cocoa:#4E403B;
+  --sand:#E9E5D6;--bone:#F0F7EF;--snow:#FFFFFF;--char:#55524E;
+  --mocha:#75665F;--hazel:#D3C5BF;--forest:#354A0A;--olive:#587322;
+  --sun:#FFBB00;--denim:#547099;--red:#8C152F;--alice:#DCE6F5;
+  --font:'Inter',-apple-system,sans-serif;
+}
+html{height:100%}body{min-height:100%;font-family:var(--font);background:var(--sand);color:var(--esp);overflow-x:hidden}
+
+/* ── NAV ─────────────────────────────────── */
+.top-nav{
+  position:sticky;top:0;z-index:300;height:60px;
+  background:var(--snow);border-bottom:1px solid var(--hazel);
+  display:flex;align-items:center;padding:0 20px;gap:16px;
+}
+.nav-logo{display:flex;align-items:center;gap:8px;font-weight:600;font-size:1rem;color:var(--esp);text-decoration:none}
+.nav-logo i{font-size:20px;color:var(--tan)}
+.stage-stepper{display:flex;align-items:center;gap:0;margin:0 auto}
+.step{display:flex;align-items:center;gap:0;cursor:pointer}
+.step-dot{
+  width:26px;height:26px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.6875rem;font-weight:700;
+  background:var(--sand);color:var(--char);
+  border:1px solid var(--hazel);transition:all .3s;
+}
+.step-label{font-size:0.6875rem;color:var(--char);margin-left:5px;white-space:nowrap;transition:color .3s}
+.step-line{width:24px;height:1px;background:var(--hazel);margin:0 4px}
+.step.active .step-dot{background:var(--tan);color:white;border-color:var(--tan)}
+.step.active .step-label{color:var(--tan);font-weight:600}
+.step.done .step-dot{background:var(--olive);color:white;border-color:var(--olive)}
+.step.done .step-label{color:var(--olive)}
+.nav-next-btn{
+  display:flex;align-items:center;gap:6px;
+  padding:8px 16px;border-radius:8px;border:none;
+  background:var(--tan);color:white;font-family:var(--font);
+  font-size:0.8125rem;font-weight:600;cursor:pointer;
+  transition:all .2s;white-space:nowrap;
+}
+.nav-next-btn:hover{background:#e03e00}
+.nav-next-btn:disabled{background:var(--hazel);cursor:not-allowed}
+.nav-next-btn.hidden{display:none}
+.nav-notes-btn{
+  display:flex;align-items:center;justify-content:center;
+  width:32px;height:32px;border-radius:8px;border:1px solid var(--hazel);
+  background:var(--snow);color:var(--char);cursor:pointer;
+  transition:all .2s;flex-shrink:0;font-size:13px;
+}
+.nav-notes-btn:hover{background:var(--sand);border-color:var(--tan);color:var(--tan)}
+.nav-notes-btn.active{background:var(--esp);border-color:var(--esp);color:var(--tan)}
+
+/* ── STAGES ──────────────────────────────── */
+.stage{display:none;min-height:calc(100vh - 60px - 52px);width:100%}
+.stage.active{display:flex;flex-direction:column;padding-bottom:64px}
+.stage-fade-in{animation:fadeIn .3s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── STAGE 1: INTRO ──────────────────────── */
+.intro-stage{justify-content:center;align-items:center;padding:40px 20px;text-align:center}
+.intro-tag{
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--bone);border:1px solid var(--hazel);
+  border-radius:20px;padding:6px 14px;
+  font-size:0.75rem;font-weight:600;color:var(--char);
+  text-transform:uppercase;letter-spacing:.06em;margin-bottom:24px;
+}
+.intro-title{font-size:clamp(1.75rem,4vw,3rem);font-weight:700;color:var(--esp);margin-bottom:12px;line-height:1.15}
+.intro-title span{color:var(--tan)}
+.intro-sub{font-size:1.0625rem;color:var(--char);margin-bottom:16px;font-weight:500}
+.intro-desc{max-width:560px;font-size:0.9375rem;color:var(--cocoa);line-height:1.65;margin:0 auto 36px}
+.intro-btn{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:14px 32px;background:var(--tan);color:white;
+  border:none;border-radius:10px;font-family:var(--font);
+  font-size:1rem;font-weight:600;cursor:pointer;transition:all .2s;
+}
+.intro-btn:hover{background:#e03e00;transform:translateY(-2px);box-shadow:0 6px 20px rgba(255,74,0,.3)}
+.intro-metrics{
+  display:flex;gap:32px;justify-content:center;flex-wrap:wrap;
+  margin-top:40px;padding-top:32px;border-top:1px solid var(--hazel);
+}
+.metric-item{text-align:center}
+.metric-num{font-size:1.75rem;font-weight:700;color:var(--tan)}
+.metric-lbl{font-size:0.75rem;color:var(--char);margin-top:2px}
+
+/* ── STAGE 2: PROBLEM ───────────────────── */
+.problem-stage{padding:40px 24px;flex-direction:column;align-items:center}
+.slide-title{font-size:1.5rem;font-weight:700;color:var(--esp);margin-bottom:6px;text-align:center}
+.slide-sub{font-size:0.875rem;color:var(--char);margin-bottom:32px;text-align:center}
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:860px;width:100%}
+.compare-card{border-radius:14px;padding:24px}
+.compare-card.old{background:var(--snow);border:2px solid var(--hazel);opacity:.85}
+.compare-card.new{background:var(--esp);border:2px solid var(--tan);color:white}
+.compare-head{display:flex;align-items:center;gap:8px;margin-bottom:20px}
+.compare-head h3{font-size:1rem;font-weight:700}
+.compare-card.old .compare-head h3{color:var(--char)}
+.compare-card.new .compare-head h3{color:white}
+.compare-badge{font-size:0.625rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:3px 8px;border-radius:4px}
+.compare-card.old .compare-badge{background:var(--sand);color:var(--char)}
+.compare-card.new .compare-badge{background:var(--tan);color:white}
+.compare-list{list-style:none;display:flex;flex-direction:column;gap:10px}
+.compare-list li{display:flex;align-items:flex-start;gap:10px;font-size:0.875rem;line-height:1.45}
+.compare-card.old .compare-list li{color:var(--cocoa)}
+.compare-card.new .compare-list li{color:#e8e0d8}
+.compare-list li i{margin-top:2px;flex-shrink:0;font-size:13px}
+.compare-card.old .compare-list li i{color:var(--hazel)}
+.compare-card.new .compare-list li i{color:var(--tan)}
+.compare-stat{
+  margin-top:20px;padding-top:16px;border-top:1px solid;
+  display:flex;align-items:center;gap:10px;
+}
+.compare-card.old .compare-stat{border-color:var(--hazel)}
+.compare-card.new .compare-stat{border-color:rgba(255,255,255,.15)}
+.compare-stat-num{font-size:1.5rem;font-weight:700}
+.compare-card.old .compare-stat-num{color:var(--char)}
+.compare-card.new .compare-stat-num{color:var(--tan)}
+.compare-stat-lbl{font-size:0.8125rem}
+.compare-card.old .compare-stat-lbl{color:var(--mocha)}
+.compare-card.new .compare-stat-lbl{color:#c8b8b0}
+
+/* ── STAGE 3: HOW IT WORKS ──────────────── */
+.how-stage{padding:32px 24px 40px;flex-direction:column;align-items:center}
+.flow-wrap{width:100%;margin-bottom:28px;overflow-x:auto}
+.flow-diagram{
+  background:var(--snow);border:1px solid var(--hazel);
+  border-radius:16px;padding:24px 28px;
+  display:flex;flex-direction:row;align-items:center;justify-content:center;gap:0;
+  min-width:max-content;width:100%;
+}
+.flow-node{
+  padding:10px 14px;border-radius:10px;text-align:center;
+  font-size:0.78rem;font-weight:600;line-height:1.3;
+  border:1.5px solid var(--hazel);background:var(--bone);color:var(--esp);
+  min-width:110px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  flex-shrink:0;
+}
+.flow-node small{display:block;font-size:0.625rem;font-weight:400;color:var(--char);margin-top:2px}
+.flow-node.ai{background:var(--esp);color:white;border-color:var(--esp)}
+.flow-node.ai small{color:#b0a898}
+.flow-node.recruiter{background:#EDF5DC;border-color:var(--olive);color:var(--forest)}
+.flow-arrow{font-size:1rem;color:var(--hazel);font-weight:300;padding:0 6px;flex-shrink:0}
+.flow-vline{display:none}
+.how-callouts{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;width:100%}
+.callout-card{background:var(--snow);border:1px solid var(--hazel);border-radius:12px;padding:20px}
+.callout-card h4{font-size:0.875rem;font-weight:700;color:var(--esp);margin-bottom:10px;display:flex;align-items:center;gap:7px}
+.callout-card h4 i{color:var(--tan)}
+.callout-card p,.callout-list{font-size:0.8125rem;color:var(--cocoa);line-height:1.6}
+.callout-list{list-style:none;display:flex;flex-direction:column;gap:6px}
+.callout-list li{font-size:0.8125rem;color:var(--cocoa);line-height:1.5}
+.callout-list li::before{content:"·  ";color:var(--tan);font-weight:700}
+.callout-note{font-size:0.75rem;color:var(--char);margin-top:10px;padding-top:8px;border-top:1px solid var(--hazel);font-style:italic}
+.callout-slots{display:flex;flex-direction:column;gap:5px}
+.cslot{display:flex;align-items:flex-start;gap:8px}
+.cslot-q{font-size:.7rem;font-weight:700;background:var(--tan);color:white;border-radius:4px;padding:1px 6px;flex-shrink:0;margin-top:1px}
+.cslot-right{display:flex;flex-direction:column;gap:1px}
+.cslot-t{font-size:.8rem;color:var(--esp);font-weight:500}
+.cslot-focus{font-size:.68rem;color:var(--char)}
+.callout-layers{display:flex;flex-direction:column;gap:10px}
+.clayer{display:flex;flex-direction:column;gap:4px}
+.clayer-lbl{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--char);margin-bottom:5px;display:block}
+.clayer-rule{display:flex;align-items:flex-start;gap:6px;margin-bottom:4px}
+.clayer-rule:last-child{margin-bottom:0}
+.clayer-rule-txt{font-size:.72rem;color:var(--cocoa);line-height:1.35}
+.clayer-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:2px}
+.ctag{font-size:.65rem;font-weight:600;padding:2px 7px;border-radius:4px;border:1px solid}
+.ctag.filled{background:#edf5dc;border-color:var(--olive);color:var(--forest)}
+.ctag.partial{background:#fff8e1;border-color:#d4a800;color:#7a5f00}
+.ctag.empty{background:var(--sand);border-color:var(--hazel);color:var(--char)}
+.ctag.neg{background:#fde8ec;border-color:#c04060;color:#7a1030}
+.ctag.s5{background:#354A0A;border-color:#354A0A;color:white}
+.ctag.s4{background:var(--bone);border-color:var(--hazel);color:var(--esp)}
+.ctag.s3{background:#FFBB00;border-color:#d4a800;color:#201B13}
+.ctag.s2{background:#F38454;border-color:#e07040;color:#201B13}
+.ctag.s1{background:#8C152F;border-color:#8C152F;color:white}
+
+/* Signal strip */
+.signal-strip{width:100%;margin-top:20px}
+.signal-strip-hd{display:flex;align-items:baseline;gap:10px;margin-bottom:10px}
+.signal-strip-hd h4{font-size:.8rem;font-weight:700;color:var(--esp);white-space:nowrap}
+.signal-strip-hd span{font-size:.72rem;color:var(--char);font-style:italic}
+.signal-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.signal-card{
+  background:var(--esp);border-radius:10px;padding:14px 16px;
+  display:flex;flex-direction:column;gap:8px;
+}
+.sig-field{font-family:'Courier New',monospace;font-size:.72rem;color:#c8ffa8;font-weight:600}
+.sig-state{display:flex;align-items:center;gap:6px}
+.sig-badge{font-size:.63rem;font-weight:700;padding:2px 8px;border-radius:4px;white-space:nowrap}
+.sig-badge.f{background:#2d5a1b;color:#c8ffa8;border:1px solid #4a8a2a}
+.sig-badge.p{background:#5a4a00;color:#ffe980;border:1px solid #9a7a00}
+.sig-badge.e{background:#3a3530;color:#aaa090;border:1px solid #55524E}
+.sig-quote{font-size:.7rem;color:rgba(255,255,255,.55);font-style:italic;line-height:1.35;padding-left:2px}
+.sig-result{font-size:.68rem;line-height:1.35;padding:6px 10px;border-radius:6px}
+.sig-result.f-res{background:rgba(200,255,168,.08);color:#a8d890;border-left:2px solid #4a8a2a}
+.sig-result.p-res{background:rgba(255,233,128,.08);color:#d4b840;border-left:2px solid #9a7a00}
+.sig-result.e-res{background:rgba(255,74,0,.1);color:#ff9070;border-left:2px solid var(--tan)}
+.signal-bts-note{
+  margin-top:10px;padding:8px 14px;
+  background:rgba(32,27,19,.06);border:1px dashed var(--hazel);border-radius:8px;
+  font-size:.72rem;color:var(--char);display:flex;align-items:center;gap:8px;
+}
+
+/* ── STAGE 4: PRE-SCREEN / STAGE 5: BEHAVIORAL DEMO ─── */
+#stage-4,#stage-5{height:calc(100vh - 60px - 52px);overflow:hidden;flex-direction:column;padding-bottom:0}
+.demo-banner{
+  flex-shrink:0;background:var(--esp);color:white;
+  padding:8px 20px;display:flex;align-items:center;
+  justify-content:space-between;gap:12px;
+}
+.demo-banner-label{font-size:0.8125rem;font-weight:600;display:flex;align-items:center;gap:6px}
+.bts-toggle-btn{
+  display:flex;align-items:center;gap:6px;
+  padding:5px 12px;border-radius:6px;border:1px solid rgba(255,255,255,.2);
+  background:transparent;color:white;font-family:var(--font);
+  font-size:0.75rem;font-weight:500;cursor:pointer;transition:all .2s;white-space:nowrap;
+}
+.bts-toggle-btn:hover{background:rgba(255,255,255,.1)}
+.bts-toggle-btn.active{background:rgba(255,74,0,.3);border-color:var(--tan)}
+.skip-chat-btn{
+  display:flex;align-items:center;gap:6px;
+  padding:5px 12px;border-radius:6px;border:1px solid rgba(255,255,255,.35);
+  background:rgba(255,255,255,.08);color:white;font-family:var(--font);
+  font-size:0.75rem;font-weight:500;cursor:pointer;transition:all .2s;white-space:nowrap;
+}
+.skip-chat-btn:hover{background:rgba(255,255,255,.18)}
+.skip-chat-btn:disabled{opacity:.35;cursor:default}
+.demo-body{flex:1;display:flex;gap:0;min-height:0;padding:12px 12px 0}
+
+/* BTS Panel */
+.bts-panel{
+  flex-shrink:0;overflow:hidden;
+  max-width:0;
+  transition:max-width .35s ease;
+  display:flex;flex-direction:column;
+}
+.bts-panel.open{max-width:310px}
+.bts-inner{
+  width:306px;margin-left:12px;
+  background:var(--esp);border-radius:12px 12px 0 0;
+  display:flex;flex-direction:column;overflow:hidden;height:100%;
+}
+.bts-head{
+  padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.08);
+  font-size:0.6875rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:.07em;color:#b0a898;flex-shrink:0;
+}
+.bts-content-wrap{flex:1;overflow-y:auto;padding:12px 14px}
+.bts-content{display:flex;flex-direction:column;gap:0}
+.bts-entry{
+  padding:10px 0;border-bottom:1px solid rgba(255,255,255,.07);
+}
+.bts-entry:last-child{border-bottom:none}
+.bts-ts{
+  font-size:.6rem;color:rgba(255,255,255,.3);
+  font-family:'Courier New',monospace;margin-bottom:4px;
+}
+.bts-msg{
+  font-family:'Courier New',monospace;font-size:0.72rem;
+  color:#c8ffa8;line-height:1.8;white-space:pre-wrap;
+  word-break:break-word;
+}
+.bts-msg b{color:#fff;font-weight:700}
+.bts-msg .f{color:#7dc858}
+.bts-msg .p{color:#ffd166}
+.bts-msg .e{color:#888}
+.bts-msg .probe{color:var(--tan);font-weight:700}
+.bts-msg .ok{color:#7dc858;font-weight:700}
+.bts-msg .warn{color:#ffd166;font-weight:700}
+.bts-new{animation:btsNew .4s ease}
+@keyframes btsNew{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.bts-content-wrap::-webkit-scrollbar{width:3px}
+.bts-content-wrap::-webkit-scrollbar-track{background:transparent}
+.bts-content-wrap::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:2px}
+
+/* Chat side */
+.chat-side{
+  flex:1;display:flex;flex-direction:column;min-width:0;
+  background:var(--snow);border-radius:12px 12px 0 0;
+  border:1px solid var(--hazel);border-bottom:none;overflow:hidden;
+}
+.chat-hd{
+  padding:12px 16px;border-bottom:1px solid var(--hazel);
+  display:flex;align-items:center;gap:10px;flex-shrink:0;
+}
+.chat-av{width:34px;height:34px;border-radius:50%;background:var(--tan);color:white;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.chat-hd-info strong{display:block;font-size:0.9rem;font-weight:600;color:var(--esp)}
+.chat-hd-info span{font-size:0.7rem;color:var(--char)}
+.online{width:8px;height:8px;border-radius:50%;background:var(--olive);margin-left:auto;flex-shrink:0}
+.chat-prog{
+  padding:8px 16px;border-bottom:1px solid var(--hazel);
+  display:flex;align-items:center;gap:10px;flex-shrink:0;
+  background:var(--bone);
+}
+.cprog-lbl{font-size:0.625rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--char);white-space:nowrap}
+.cprog-segs{flex:1;display:flex;gap:5px}
+.cprog-seg{flex:1;height:4px;border-radius:2px;background:var(--hazel);transition:background .4s}
+.cprog-seg.active{background:rgba(255,74,0,.4)}
+.cprog-seg.done{background:var(--tan)}
+.chat-msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+.chat-msgs::-webkit-scrollbar{width:4px}
+.chat-msgs::-webkit-scrollbar-track{background:transparent}
+.chat-msgs::-webkit-scrollbar-thumb{background:var(--hazel);border-radius:2px}
+.msg{display:flex;align-items:flex-end;gap:7px;animation:msgIn .25s ease}
+.msg.ai{flex-direction:row}
+.msg.you{flex-direction:row-reverse}
+@keyframes msgIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.mv{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0}
+.mv.ai{background:var(--tan);color:white}
+.mv.you{background:var(--esp);color:white}
+.mb{max-width:76%;display:flex;flex-direction:column}
+.mb-text{padding:10px 14px;border-radius:14px;font-size:0.875rem;line-height:1.5;white-space:pre-wrap}
+.msg.ai .mb-text{background:var(--bone);color:var(--esp);border-bottom-left-radius:3px}
+.msg.you .mb-text{background:var(--tan);color:white;border-bottom-right-radius:3px}
+.msg-ts{font-size:.62rem;color:var(--char);opacity:.55;margin-top:3px;padding:0 2px}
+.msg.you .msg-ts{text-align:right}
+.typing-row{display:flex;align-items:flex-end;gap:7px;animation:msgIn .2s ease}
+.typing-bub{background:var(--bone);border-radius:14px;border-bottom-left-radius:3px;padding:11px 14px;display:flex;gap:4px}
+.td{width:6px;height:6px;border-radius:50%;background:var(--mocha);animation:tdBlink 1.2s ease infinite}
+.td:nth-child(2){animation-delay:.2s}
+.td:nth-child(3){animation-delay:.4s}
+@keyframes tdBlink{0%,60%,100%{opacity:.25;transform:scale(1)}30%{opacity:1;transform:scale(1.25)}}
+.chat-input-area{
+  padding:10px 14px;border-top:1px solid var(--hazel);
+  display:flex;gap:8px;align-items:flex-end;flex-shrink:0;background:var(--snow);
+}
+.ci{
+  flex:1;border:1.5px solid var(--hazel);border-radius:10px;
+  padding:10px 13px;font-family:var(--font);font-size:0.875rem;
+  color:var(--esp);resize:none;outline:none;min-height:42px;max-height:100px;
+  line-height:1.4;transition:border-color .2s;
+}
+.ci:focus{border-color:var(--tan)}
+.ci:disabled{background:var(--sand);color:var(--mocha);cursor:not-allowed}
+.ci::placeholder{color:var(--mocha)}
+.sb{
+  width:42px;height:42px;flex-shrink:0;border-radius:10px;border:none;
+  background:var(--tan);color:white;cursor:pointer;font-size:14px;
+  display:flex;align-items:center;justify-content:center;transition:all .2s;
+}
+.sb:hover:not(:disabled){background:#e03e00;transform:scale(1.05)}
+.sb:disabled{background:var(--hazel);cursor:not-allowed}
+.complete-panel{width:100%;text-align:center;padding:14px;background:#EDF5DC;border-radius:8px;animation:msgIn .3s ease;}
+.complete-panel h3{font-size:.875rem;font-weight:700;color:var(--olive);margin-bottom:4px}
+.complete-panel p{font-size:.75rem;color:var(--cocoa);margin-bottom:12px}
+/* Scheduling panel */
+.sched-panel{width:100%;padding:14px;background:var(--snow);border:1px solid var(--hazel);border-radius:8px;animation:msgIn .3s ease}
+.sched-hd{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.sched-hd h3{font-size:.875rem;font-weight:700;color:var(--olive)}
+.sched-hd i{color:var(--olive);font-size:14px}
+.sched-sub{font-size:.75rem;color:var(--cocoa);margin-bottom:12px;line-height:1.45}
+.sched-recruiters{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.sched-rec{background:var(--bone);border:1px solid var(--hazel);border-radius:8px;padding:10px 12px}
+.sched-rec-hd{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.sched-av{width:28px;height:28px;border-radius:50%;background:var(--denim);color:white;font-size:.65rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sched-rec-info strong{display:block;font-size:.8rem;font-weight:600;color:var(--esp)}
+.sched-rec-info span{font-size:.7rem;color:var(--char)}
+.sched-slots{display:flex;flex-wrap:wrap;gap:5px}
+.sched-slot{padding:4px 10px;border:1px solid var(--hazel);border-radius:5px;background:white;font-family:var(--font);font-size:.72rem;color:var(--cocoa);cursor:pointer;transition:all .15s}
+.sched-slot:hover{border-color:var(--tan);color:var(--tan)}
+.sched-slot.selected{background:var(--tan);border-color:var(--tan);color:white;font-weight:600}
+.sched-confirm{width:100%;padding:8px;background:var(--tan);color:white;border:none;border-radius:7px;font-family:var(--font);font-size:.8rem;font-weight:600;cursor:pointer;transition:all .2s;margin-bottom:8px}
+.sched-confirm:disabled{background:var(--hazel);cursor:not-allowed}
+.sched-recruiter-note{font-size:.68rem;color:var(--char);text-align:center;line-height:1.4;display:flex;align-items:flex-start;gap:5px;padding:6px 8px;background:var(--sand);border-radius:5px}
+.sched-confirmed{text-align:center;padding:8px 0}
+.sched-confirmed i{font-size:2rem;color:var(--olive);margin-bottom:8px}
+.sched-confirmed h3{font-size:.9rem;font-weight:700;color:var(--olive);margin-bottom:6px}
+.sched-confirmed p{font-size:.75rem;color:var(--cocoa);line-height:1.5;margin-bottom:4px}
+.view-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:8px 20px;background:var(--tan);color:white;border:none;
+  border-radius:8px;font-family:var(--font);font-size:.8125rem;font-weight:600;
+  cursor:pointer;transition:all .2s;
+}
+.view-btn:hover{background:#e03e00;transform:translateY(-1px)}
+
+/* ── STAGE 6: DASHBOARD ─────────────────── */
+#stage-6{min-height:calc(100vh - 60px - 52px);flex-direction:column}
+.dash-banner{
+  flex-shrink:0;background:var(--denim);color:white;
+  padding:8px 20px;font-size:0.8125rem;font-weight:600;
+  display:flex;align-items:center;gap:6px;
+}
+.dash-body{padding:20px 28px 40px;width:100%}
+.dash-header{
+  background:var(--snow);border:1px solid var(--hazel);border-radius:16px;
+  padding:24px;display:flex;gap:24px;align-items:center;
+  margin-bottom:16px;flex-wrap:wrap;
+}
+.gauge-wrap{position:relative;width:100px;height:100px;flex-shrink:0}
+.gauge-wrap svg{width:100px;height:100px;transform:rotate(-90deg)}
+.gauge-bg{fill:none;stroke:var(--hazel);stroke-width:8}
+.gauge-ring{fill:none;stroke:var(--tan);stroke-width:8;stroke-linecap:round;stroke-dasharray:245;stroke-dashoffset:245;transition:stroke-dashoffset 1.6s cubic-bezier(.4,0,.2,1)}
+.gauge-txt{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.gauge-score{font-size:1.5rem;font-weight:700;color:var(--esp);line-height:1}
+.gauge-denom{font-size:.65rem;color:var(--char)}
+.dash-hdr-info{flex:1;min-width:180px}
+.dash-hdr-info h1{font-size:1.25rem;font-weight:700;color:var(--esp);margin-bottom:3px}
+.dash-date{font-size:.8rem;color:var(--char);margin-bottom:12px}
+.rec-badge{display:inline-flex;align-items:center;gap:6px;background:#EDF5DC;color:var(--olive);border:1px solid var(--olive);border-radius:7px;padding:6px 12px;font-size:.8rem;font-weight:600}
+.debug-row{display:flex;align-items:center;gap:8px;margin-top:12px}
+.debug-row label{font-size:.8rem;color:var(--char);cursor:pointer}
+.tog{position:relative;display:inline-block;width:36px;height:20px;flex-shrink:0}
+.tog input{opacity:0;width:0;height:0}
+.tog-sl{position:absolute;inset:0;background:var(--hazel);border-radius:10px;transition:background .2s;cursor:pointer}
+.tog-sl::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;background:white;border-radius:50%;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.tog input:checked+.tog-sl{background:var(--denim)}
+.tog input:checked+.tog-sl::after{transform:translateX(16px)}
+.sec-hd{font-size:.6875rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--char);margin-bottom:9px}
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(252px,1fr));gap:10px;margin-bottom:16px}
+.sc-card{
+  background:var(--snow);border:1px solid var(--hazel);border-left:4px solid;
+  border-radius:12px;padding:15px;transition:box-shadow .2s;
+  animation:cardIn .4s ease both;
+}
+.sc-card:hover{box-shadow:0 4px 14px rgba(0,0,0,.07)}
+@keyframes cardIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.sc-card:nth-child(1){animation-delay:.04s}.sc-card:nth-child(2){animation-delay:.09s}
+.sc-card:nth-child(3){animation-delay:.13s}.sc-card:nth-child(4){animation-delay:.17s}
+.sc-card:nth-child(5){animation-delay:.21s}.sc-card:nth-child(6){animation-delay:.25s}
+.sc-card:nth-child(7){animation-delay:.29s}
+.sc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px}
+.sc-qlbl{font-size:.6875rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--char)}
+.sc-score{font-weight:700;font-size:.9375rem;display:flex;align-items:baseline;gap:2px}
+.sc-denom{font-weight:400;font-size:.75rem;color:var(--hazel)}
+.sc-title{font-size:.875rem;font-weight:600;color:var(--esp);margin-bottom:7px}
+.sc-bar{height:5px;background:var(--sand);border-radius:3px;overflow:hidden;margin-bottom:8px}
+.sc-bar-fill{height:100%;border-radius:3px;width:0;transition:width 1s cubic-bezier(.4,0,.2,1)}
+.sc-evid{font-size:.7625rem;color:var(--cocoa);line-height:1.5}
+.sc-debug{margin-top:10px;padding-top:10px;border-top:1px dashed var(--hazel);display:none}
+.sc-debug.show{display:block}
+.sc-debug pre{background:var(--esp);color:#b0ffa0;border-radius:7px;padding:10px 12px;font-size:.68rem;line-height:1.7;white-space:pre;overflow-x:auto}
+/* Methodology accordion */
+.method-box{background:var(--snow);border:1px solid var(--hazel);border-radius:12px;margin-bottom:16px;overflow:hidden}
+.method-summary{
+  display:flex;align-items:center;gap:8px;padding:14px 18px;cursor:pointer;
+  font-size:.8125rem;font-weight:600;color:var(--esp);list-style:none;
+  user-select:none;
+}
+.method-summary::-webkit-details-marker{display:none}
+.method-summary:hover{background:var(--bone)}
+.method-chev{margin-left:auto;font-size:10px;color:var(--char);transition:transform .2s}
+details[open] .method-chev{transform:rotate(180deg)}
+.method-body{padding:0 18px 18px;border-top:1px solid var(--hazel)}
+.method-cols{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0 12px}
+.method-col h4{font-size:.8125rem;font-weight:700;color:var(--esp);margin:8px 0 5px}
+.method-col p{font-size:.78rem;color:var(--cocoa);line-height:1.6}
+.method-prompt-badge{display:inline-block;font-size:.65rem;font-weight:700;border-radius:4px;padding:2px 8px;text-transform:uppercase;letter-spacing:.05em}
+.method-prompt-badge.a{background:var(--tan);color:white}
+.method-prompt-badge.b{background:var(--denim);color:white}
+.method-rubric{background:var(--bone);border-radius:8px;padding:12px;margin-top:8px}
+.method-rub-title{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--char);margin-bottom:8px}
+.method-rub-row{display:flex;align-items:flex-start;gap:10px;margin-bottom:6px}
+.method-rub-row:last-child{margin-bottom:0}
+.mrub{font-size:.7rem;font-weight:700;white-space:nowrap;padding:2px 8px;border-radius:4px;min-width:100px;text-align:center}
+.mrub.s5{background:#354A0A;color:white}
+.mrub.s4{background:#587322;color:white}
+.mrub.s3{background:#FFBB00;color:#201B13}
+.mrub.s2{background:#F38454;color:#201B13}
+.mrub.s1{background:#8C152F;color:white}
+.mrub-desc{font-size:.76rem;color:var(--cocoa);line-height:1.5}
+.method-bar-note{background:#fff8e1;border:1px solid #d4a800;border-radius:8px;padding:10px 12px;margin-top:10px;font-size:.8rem;color:#5a4200;display:flex;align-items:flex-start;gap:8px;line-height:1.5}
+/* Radar */
+.radar-box{background:var(--snow);border:1px solid var(--hazel);border-radius:16px;padding:22px;margin-bottom:16px;display:flex;justify-content:center}
+/* Notes */
+.note-box{background:var(--snow);border:1px solid var(--hazel);border-left:4px solid;border-radius:12px;padding:20px;margin-bottom:12px}
+.note-box.holistic{border-left-color:var(--denim)}
+.note-box.integrity{border-left-color:var(--sun)}
+.note-box.summary{border-left-color:var(--tan)}
+.note-box h3{font-size:.875rem;font-weight:700;color:var(--esp);padding-bottom:10px;margin-bottom:10px;border-bottom:1px solid var(--hazel);display:flex;align-items:center;gap:7px}
+.note-box h3 i{flex-shrink:0;line-height:1;display:flex;align-items:center}
+.note-box p{font-size:.875rem;color:var(--cocoa);line-height:1.65}
+/* Likert scale */
+.likert-box{background:var(--snow);border:1px solid var(--hazel);border-radius:12px;padding:18px 20px;margin-bottom:16px}
+.likert-title{font-size:.6875rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--char);margin-bottom:12px}
+.likert-row{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.likert-row:last-child{margin-bottom:0}
+.likert-badge{font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:5px;white-space:nowrap;min-width:90px;text-align:center}
+.lb-5{background:#354A0A;color:white}
+.lb-4{background:#587322;color:white}
+.lb-3{background:#FFBB00;color:#201B13}
+.lb-2{background:#F38454;color:#201B13}
+.lb-1{background:#8C152F;color:white}
+.likert-desc{font-size:.8rem;color:var(--cocoa);line-height:1.4}
+.likert-current{border:2px solid var(--tan);border-radius:8px;padding:2px 6px;background:#fff4f0}
+/* Locked */
+.dash-locked{text-align:center;padding:60px 20px;background:var(--snow);border:1px solid var(--hazel);border-radius:16px;margin:24px auto;max-width:500px}
+.dash-locked i{font-size:2.5rem;color:var(--hazel);margin-bottom:14px}
+.dash-locked h3{font-size:1.1rem;font-weight:700;color:var(--char);margin-bottom:6px}
+.dash-locked p{font-size:.875rem;color:var(--mocha)}
+
+/* ── STAGE 6: NEXT STEPS ────────────────── */
+.next-stage{padding:36px 28px 48px;flex-direction:column;align-items:flex-start}
+.next-cols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;width:100%;margin-bottom:20px}
+.next-box{background:var(--snow);border:1px solid var(--hazel);border-radius:14px;overflow:hidden}
+.next-box-head{
+  display:flex;align-items:center;gap:9px;
+  background:var(--esp);color:white;
+  padding:11px 16px;font-size:.78rem;font-weight:700;
+  letter-spacing:.04em;text-transform:uppercase;
+}
+.next-box-head i{color:var(--tan);font-size:15px;flex-shrink:0}
+.next-inner-table{width:100%;border-collapse:collapse}
+.next-inner-table tr{border-top:1px solid var(--hazel)}
+.next-inner-table tr:first-child{border-top:none}
+.next-inner-table tr:hover{background:var(--bone)}
+.next-inner-table td{padding:10px 14px;vertical-align:top;font-size:.8125rem}
+.nit-item{font-weight:600;color:var(--esp);width:42%;min-width:120px}
+.nit-item::before{content:"→ ";color:var(--tan);font-weight:700}
+.nit-desc{color:var(--char);line-height:1.4;font-size:.77rem}
+.next-highlight{
+  width:100%;border-radius:14px;padding:22px 28px;
+  display:flex;align-items:flex-start;gap:18px;
+}
+.next-highlight.eng{background:var(--esp);border:2px solid var(--tan)}
+.next-highlight i{font-size:1.75rem;color:var(--tan);flex-shrink:0;margin-top:2px}
+.next-highlight p{font-size:.9rem;line-height:1.65;color:#c8b8b0}
+.next-highlight strong{color:white}
+
+/* ── PRESENTER NOTES ───────────────────── */
+.pnotes-bar{
+  position:fixed;bottom:0;left:0;right:0;z-index:200;
+  background:rgba(32,27,19,.92);backdrop-filter:blur(8px);
+  color:#e8e0d8;padding:10px 20px;
+  display:flex;align-items:center;gap:12px;
+  height:52px;transition:transform .25s ease;
+}
+.pnotes-bar.hidden{transform:translateY(100%)}
+.pnotes-icon{color:var(--tan);font-size:13px;flex-shrink:0}
+.pnotes-text{font-size:.7625rem;line-height:1.45;flex:1;color:#b8a898}
+.pnotes-close{
+  background:none;border:none;color:#b8a898;cursor:pointer;
+  font-size:16px;padding:2px 4px;flex-shrink:0;
+  transition:color .2s;
+}
+.pnotes-close:hover{color:white}
+
+/* ── CONFETTI ───────────────────────────── */
+#confetti{position:fixed;inset:0;pointer-events:none;z-index:9999;overflow:hidden}
+.conf{position:absolute;top:-10px;border-radius:2px;animation:confFall linear forwards}
+@keyframes confFall{to{transform:translateY(105vh) rotate(720deg);opacity:0}}
+
+/* ── RECRUITER ANALYSIS ─────────────────── */
+.rec-analysis{
+  width:100%;background:var(--snow);border:1px solid var(--hazel);
+  border-radius:14px;overflow:hidden;margin-bottom:16px;
+}
+.rec-analysis-hd{
+  display:flex;align-items:center;gap:9px;flex-wrap:wrap;
+  padding:11px 16px;border-bottom:1px solid var(--hazel);
+  font-size:.78rem;font-weight:700;color:var(--esp);
+}
+.rec-analysis-sub{font-size:.72rem;font-weight:400;color:var(--char);margin-left:auto}
+.rec-analysis-body{display:grid;grid-template-columns:1fr 32px 1fr;align-items:stretch}
+.rec-col{padding:16px 18px;display:flex;flex-direction:column;gap:0}
+.rec-col.manual{border-right:1px solid var(--hazel)}
+.rec-col-head{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--char);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--hazel)}
+.rec-col.ai .rec-col-head{color:var(--olive)}
+.rec-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:5px 0;border-bottom:1px solid rgba(211,197,191,.3)}
+.rec-row:last-child{border-bottom:none}
+.rec-lbl{font-size:.75rem;color:var(--char);flex-shrink:0}
+.rec-val{font-size:.8rem;font-weight:600;color:var(--esp);text-align:right}
+.rec-val-sm{font-size:.72rem;font-weight:400;color:var(--cocoa)}
+.rec-val-hi{color:var(--cocoa)}
+.ai-hi{color:var(--olive) !important}
+.rec-val-no{color:var(--red);font-size:.75rem}
+.rec-val-ok{color:var(--olive);font-size:.75rem}
+.rec-divider{display:flex;align-items:center;justify-content:center;color:var(--hazel);font-size:12px;background:var(--bone)}
+.rec-analysis-note{
+  padding:9px 16px;background:var(--bone);border-top:1px solid var(--hazel);
+  font-size:.75rem;color:var(--char);display:flex;align-items:flex-start;gap:8px;line-height:1.5;
+}
+.rec-ft-section{border-top:1px solid var(--hazel)}
+.rec-ft-hd{
+  padding:8px 16px;background:rgba(255,74,0,.05);border-bottom:1px solid var(--hazel);
+  font-size:.72rem;font-weight:700;color:var(--esp);display:flex;align-items:center;gap:7px;
+  letter-spacing:.02em;
+}
+.rec-ft-body{display:grid;grid-template-columns:1fr 1fr;gap:0}
+.rec-ft-col{padding:12px 16px}
+.rec-ft-col:first-child{border-right:1px solid var(--hazel)}
+.rec-ft-tier{display:flex;flex-direction:column;gap:6px}
+.rec-ft-tier-lbl{display:flex;align-items:center;gap:7px;font-size:.75rem;color:var(--char)}
+.rec-ft-badge{font-size:.62rem;font-weight:700;padding:2px 7px;border-radius:4px;white-space:nowrap}
+.rec-ft-badge.hi{background:#354A0A;color:white}
+.rec-ft-badge.lo{background:var(--sand);border:1px solid var(--hazel);color:var(--char)}
+.rec-ft-detail{font-size:.75rem;color:var(--cocoa);line-height:1.5}
+.rec-ft-save{display:flex;flex-direction:column;gap:2px;margin-top:4px;padding:6px 10px;background:var(--bone);border-radius:6px;border-left:3px solid var(--olive)}
+.rec-ft-save-lbl{font-size:.65rem;text-transform:uppercase;letter-spacing:.05em;color:var(--char)}
+.rec-ft-save-val{font-size:.78rem;color:var(--esp)}
+.rec-ft-total{
+  padding:8px 16px;background:var(--esp);color:white;
+  font-size:.75rem;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+}
+.rec-ft-total span:first-child{color:#b0a898;white-space:nowrap}
+.rec-ft-total strong{color:var(--tan)}
+
+/* ── RESPONSIVE ────────────────────────── */
+@media(max-width:1000px){
+  .next-cols{grid-template-columns:1fr}
+  .next-inner-table td{padding:9px 12px}
+  .nit-item{width:38%}
+}
+@media(max-width:700px){
+  .compare-grid,.how-callouts{grid-template-columns:1fr}
+  .stage-stepper .step-label,.step-line{display:none}
+  .intro-metrics{gap:20px}
+  .rec-analysis-body{grid-template-columns:1fr;grid-template-rows:auto}
+  .rec-col.manual{border-right:none;border-bottom:1px solid var(--hazel)}
+  .rec-divider{display:none}
+  .rec-analysis-sub{display:none}
+  .rec-ft-body{grid-template-columns:1fr}
+  .rec-ft-col:first-child{border-right:none;border-bottom:1px solid var(--hazel)}
+}
+
+/* ── PASSWORD GATE ───────────────────────── */
+#gate{
+  position:fixed;inset:0;z-index:9999;
+  background:var(--esp);
+  display:flex;align-items:center;justify-content:center;
+}
+#gate.unlocked{animation:gateFade .35s ease forwards}
+@keyframes gateFade{to{opacity:0;pointer-events:none}}
+.gate-box{
+  background:var(--snow);border-radius:20px;
+  padding:40px 44px;width:100%;max-width:380px;
+  display:flex;flex-direction:column;align-items:center;gap:0;
+  box-shadow:0 24px 60px rgba(0,0,0,.35);
+}
+.gate-logo{display:flex;align-items:center;gap:9px;margin-bottom:28px}
+.gate-logo i{font-size:26px;color:var(--tan)}
+.gate-logo span{font-size:1.25rem;font-weight:700;color:var(--esp)}
+.gate-title{font-size:1rem;font-weight:700;color:var(--esp);margin-bottom:6px;text-align:center}
+.gate-sub{font-size:.8125rem;color:var(--char);margin-bottom:24px;text-align:center}
+.gate-input-wrap{position:relative;width:100%;margin-bottom:12px}
+.gate-input{
+  width:100%;padding:11px 42px 11px 14px;
+  border:1.5px solid var(--hazel);border-radius:10px;
+  font-family:var(--font);font-size:.9375rem;color:var(--esp);
+  background:var(--snow);outline:none;transition:border-color .2s;
+  letter-spacing:.08em;
+}
+.gate-input:focus{border-color:var(--tan)}
+.gate-input.error{border-color:#8C152F;animation:shake .3s ease}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.gate-eye{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  background:none;border:none;cursor:pointer;color:var(--char);
+  font-size:14px;padding:2px;transition:color .2s;
+}
+.gate-eye:hover{color:var(--tan)}
+.gate-err{font-size:.75rem;color:#8C152F;margin-bottom:12px;height:16px;text-align:center;width:100%}
+.gate-btn{
+  width:100%;padding:12px;border-radius:10px;border:none;
+  background:var(--tan);color:white;font-family:var(--font);
+  font-size:.9375rem;font-weight:600;cursor:pointer;transition:all .2s;
+}
+.gate-btn:hover{background:#e03e00}
+</style>
+</head>
+<body>
+
+<!-- PASSWORD GATE -->
+<div id="gate">
+  <div class="gate-box">
+    <div class="gate-logo"><i class="fa-duotone fa-life-ring"></i><span>Influx</span></div>
+    <p class="gate-title">Internal Demo</p>
+    <p class="gate-sub">Enter the access password to continue.</p>
+    <div class="gate-input-wrap">
+      <input class="gate-input" id="gate-input" type="password" placeholder="Password" autocomplete="off"
+        onkeydown="if(event.key==='Enter')unlockGate()">
+      <button class="gate-eye" id="gate-eye" onclick="toggleGateEye()" tabindex="-1">
+        <i class="fa-solid fa-eye" id="gate-eye-icon"></i>
+      </button>
+    </div>
+    <div class="gate-err" id="gate-err"></div>
+    <button class="gate-btn" onclick="unlockGate()">Enter</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  const PASS = 'influx2025';
+  if (sessionStorage.getItem('gate_ok') === '1') {
+    document.getElementById('gate').style.display = 'none';
+  }
+  window.unlockGate = function() {
+    const inp = document.getElementById('gate-input');
+    const err = document.getElementById('gate-err');
+    if (inp.value === PASS) {
+      sessionStorage.setItem('gate_ok', '1');
+      const gate = document.getElementById('gate');
+      gate.classList.add('unlocked');
+      gate.addEventListener('animationend', () => gate.style.display = 'none', { once: true });
+    } else {
+      err.textContent = 'Incorrect password. Try again.';
+      inp.classList.add('error');
+      inp.value = '';
+      inp.addEventListener('animationend', () => inp.classList.remove('error'), { once: true });
+    }
+  };
+  window.toggleGateEye = function() {
+    const inp = document.getElementById('gate-input');
+    const icon = document.getElementById('gate-eye-icon');
+    if (inp.type === 'password') {
+      inp.type = 'text';
+      icon.className = 'fa-solid fa-eye-slash';
+    } else {
+      inp.type = 'password';
+      icon.className = 'fa-solid fa-eye';
+    }
+  };
+})();
+</script>
+
+<!-- NAV -->
+<nav class="top-nav">
+  <a class="nav-logo" href="#">
+    <i class="fa-duotone fa-life-ring"></i> Influx
+  </a>
+  <div class="stage-stepper" id="stepper"></div>
+  <button class="nav-notes-btn" id="notes-toggle-btn" onclick="toggleNotes()" title="Toggle presenter notes">
+    <i class="fa-duotone fa-microphone"></i>
+  </button>
+  <button class="nav-next-btn" id="next-btn" onclick="nextStage()">
+    Next <i class="fa-solid fa-arrow-right"></i>
+  </button>
+</nav>
+
+<!-- STAGE 1: INTRO -->
+<div class="stage intro-stage stage-fade-in" id="stage-1">
+  <div class="intro-tag"><i class="fa-duotone fa-robot"></i> AI-Powered Assessment</div>
+  <h1 class="intro-title">AI Chat-Based<br><span>Candidate Assessment</span></h1>
+  <p class="intro-sub">Smarter screening. Consistent scoring. Scalable hiring.</p>
+  <p class="intro-desc">An AI-powered chat interview that assesses candidates across 6 core traits, probes for depth, and produces a scored assessment report — automatically.</p>
+  <button class="intro-btn" onclick="nextStage()">
+    Let me show you how it works <i class="fa-solid fa-arrow-right"></i>
+  </button>
+  <div class="intro-metrics">
+    <div class="metric-item"><div class="metric-num">6</div><div class="metric-lbl">Traits assessed</div></div>
+    <div class="metric-item"><div class="metric-num">18</div><div class="metric-lbl">Signal fields checked</div></div>
+    <div class="metric-item"><div class="metric-num">93%</div><div class="metric-lbl">Calibration accuracy</div></div>
+    <div class="metric-item"><div class="metric-num">&lt;15 days</div><div class="metric-lbl">Recruitment cycle target</div></div>
+  </div>
+</div>
+
+<!-- STAGE 2: PROBLEM -->
+<div class="stage problem-stage" id="stage-2">
+  <h2 class="slide-title">Why We Need This</h2>
+  <p class="slide-sub">We have AI grading — but static forms with fixed probes that can't adapt to what candidates actually say.</p>
+  <div class="compare-grid">
+    <div class="compare-card old">
+      <div class="compare-head">
+        <i class="fa-solid fa-circle-xmark" style="color:var(--hazel);font-size:18px"></i>
+        <h3>Current Approach</h3>
+        <span class="compare-badge">Before</span>
+      </div>
+      <ul class="compare-list">
+        <li><i class="fa-solid fa-minus" style="color:var(--hazel)"></i>Typeform — 5 question versions (V1–V5) randomized per candidate</li>
+        <li><i class="fa-solid fa-minus" style="color:var(--hazel)"></i>AI-graded: Strong Yes (5) → Strong No (1) against recruiter benchmarks</li>
+        <li><i class="fa-solid fa-minus" style="color:var(--hazel)"></i>Follow-up probes triggered if score &lt; 3.5 — but fixed, pre-written</li>
+        <li><i class="fa-solid fa-minus" style="color:var(--hazel)"></i>Probes can't adapt to what the candidate actually just said</li>
+        <li><i class="fa-solid fa-minus" style="color:var(--hazel)"></i>Signal detection and quality check exist — but applied to static text</li>
+        <li><i class="fa-solid fa-minus" style="color:var(--hazel)"></i>No conversational depth — candidates know it's a form, not an interview</li>
+      </ul>
+      <div class="compare-stat">
+        <span class="compare-stat-num">Fixed</span>
+        <span class="compare-stat-lbl">probes — can't adapt to the actual answer</span>
+      </div>
+    </div>
+    <div class="compare-card new">
+      <div class="compare-head">
+        <i class="fa-solid fa-circle-check" style="color:var(--tan);font-size:18px"></i>
+        <h3>AI-Powered Approach</h3>
+        <span class="compare-badge">After</span>
+      </div>
+      <ul class="compare-list">
+        <li><i class="fa-duotone fa-comment-dots"></i>Conversational chat — candidate doesn't know it's an assessment</li>
+        <li><i class="fa-duotone fa-magnifying-glass"></i>AI generates probes based on what the candidate just said</li>
+        <li><i class="fa-duotone fa-layer-group"></i>18 signal fields checked per answer — per candidate response</li>
+        <li><i class="fa-duotone fa-robot"></i>Same rubric every time — human-benchmarked, not rule-based</li>
+        <li><i class="fa-duotone fa-gauge-high"></i>Probes target specific empty fields — not pre-written scripts</li>
+        <li><i class="fa-duotone fa-chart-line"></i>93% alignment with recruiter benchmarks in calibration testing</li>
+      </ul>
+      <div class="compare-stat">
+        <span class="compare-stat-num">~0s</span>
+        <span class="compare-stat-lbl">recruiter time per initial screen</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- STAGE 3: HOW IT WORKS -->
+<div class="stage how-stage" id="stage-3">
+  <h2 class="slide-title">How It Works</h2>
+  <p class="slide-sub">A two-call architecture: interview and scoring are separate.</p>
+  <div class="flow-wrap">
+    <div class="flow-diagram">
+      <div class="flow-node"><i class="fa-duotone fa-user" style="font-size:16px;color:var(--tan);margin-bottom:4px"></i>Candidate</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-node"><i class="fa-duotone fa-comment-dots" style="font-size:16px;color:var(--denim);margin-bottom:4px"></i>Chat Interface</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-node ai"><i class="fa-duotone fa-robot" style="font-size:16px;color:var(--tan);margin-bottom:4px"></i>AI Interviewer<small>Prompt A</small></div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-node"><i class="fa-duotone fa-file-lines" style="font-size:16px;color:var(--char);margin-bottom:4px"></i>Transcript</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-node ai"><i class="fa-duotone fa-brain" style="font-size:16px;color:var(--tan);margin-bottom:4px"></i>AI Scorer<small>Prompt B</small></div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-node" style="background:#EDF5DC;border-color:var(--olive)"><i class="fa-duotone fa-chart-line" style="font-size:16px;color:var(--olive);margin-bottom:4px"></i>Assessment Report</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-node recruiter"><i class="fa-duotone fa-users" style="font-size:16px;color:var(--olive);margin-bottom:4px"></i>Recruiter</div>
+    </div>
+  </div>
+  <div class="how-callouts">
+    <div class="callout-card">
+      <h4><i class="fa-duotone fa-sparkles"></i> 5-Slot Question Structure</h4>
+      <div class="callout-slots">
+        <div class="cslot"><span class="cslot-q">Q1</span><div class="cslot-right"><span class="cslot-t">Commitment + Self Awareness</span><span class="cslot-focus">Motivation, role fit, self-knowledge</span></div></div>
+        <div class="cslot"><span class="cslot-q">Q2</span><div class="cslot-right"><span class="cslot-t">Learning Agility</span><span class="cslot-focus">Learning process, self-direction</span></div></div>
+        <div class="cslot"><span class="cslot-q">Q3</span><div class="cslot-right"><span class="cslot-t">Intelligence</span><span class="cslot-focus">Problem diagnosis, systematic thinking</span></div></div>
+        <div class="cslot"><span class="cslot-q">Q4</span><div class="cslot-right"><span class="cslot-t">Conscientiousness + Self Awareness</span><span class="cslot-focus">Pressure handling, ownership, stakeholder awareness</span></div></div>
+        <div class="cslot"><span class="cslot-q">Q5</span><div class="cslot-right"><span class="cslot-t">Agency</span><span class="cslot-focus">Resourcefulness, experimentation, self-sufficiency</span></div></div>
+      </div>
+      <p class="callout-note">Probes triggered per empty signal field — max 1 per trait, 2 for Q1 &amp; Q4</p>
+    </div>
+    <div class="callout-card">
+      <h4><i class="fa-duotone fa-layer-group"></i> Two-Layer Scoring</h4>
+      <div class="callout-layers">
+        <div class="clayer">
+          <span class="clayer-lbl">Layer 1 — Field State Check</span>
+          <div class="clayer-rule"><span class="ctag filled">Filled</span><span class="clayer-rule-txt">Counts toward score; quality set by Layer 2</span></div>
+          <div class="clayer-rule"><span class="ctag partial">Partial</span><span class="clayer-rule-txt">Caps trait at score 3 unless upgraded by probe</span></div>
+          <div class="clayer-rule"><span class="ctag empty">Empty</span><span class="clayer-rule-txt">Pulls score down; scored as absent after probing</span></div>
+          <div class="clayer-rule"><span class="ctag neg">Negative</span><span class="clayer-rule-txt">Caps trait at 2 max (1 if multiple negatives)</span></div>
+        </div>
+        <div class="clayer" style="margin-top:8px">
+          <span class="clayer-lbl">Layer 2 — Quality Descriptor</span>
+          <div class="clayer-rule"><span class="ctag s5">Score 5</span><span class="clayer-rule-txt">All fields filled, intentional &amp; specific — goes beyond the bar</span></div>
+          <div class="clayer-rule"><span class="ctag s4">Score 4</span><span class="clayer-rule-txt">All fields filled, clear &amp; honest — meets standard</span></div>
+          <div class="clayer-rule"><span class="ctag s3">Score 3</span><span class="clayer-rule-txt">Mix of filled &amp; partial — generic or scripted, no depth</span></div>
+          <div class="clayer-rule"><span class="ctag s2">Score 2</span><span class="clayer-rule-txt">Mostly empty after probing — vague, minimal effort</span></div>
+          <div class="clayer-rule"><span class="ctag s1">Score 1</span><span class="clayer-rule-txt">Negative fills present — answer contradicts the trait</span></div>
+        </div>
+      </div>
+      <p class="callout-note">Final score per trait = field state pattern + quality level combined via per-slot scoring matrix</p>
+    </div>
+    <div class="callout-card">
+      <h4><i class="fa-duotone fa-magnifying-glass"></i> Dynamic Probing</h4>
+      <ul class="callout-list">
+        <li>18 signal fields checked per answer</li>
+        <li>Probes target specific <em>empty</em> fields — not pre-written scripts</li>
+        <li>Max 1 probe per trait (2 for dual-trait slots)</li>
+        <li>Non-leading — candidate never knows what's being assessed</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Signal strip -->
+  <div class="signal-strip">
+    <div class="signal-strip-hd">
+      <h4><i class="fa-duotone fa-signal-bars" style="color:var(--tan);margin-right:5px"></i> Signal Fields in Practice — Sample from Q1 (Commitment + Self Awareness)</h4>
+      <span>These exact field names appear in the Behind the Scenes panel →</span>
+    </div>
+    <div class="signal-cards">
+
+      <div class="signal-card">
+        <div class="sig-field">motivation_type</div>
+        <div class="sig-state">
+          <span class="sig-badge f">✅ FILLED</span>
+          <span style="font-size:.63rem;color:rgba(255,255,255,.4)">Commitment</span>
+        </div>
+        <div class="sig-quote">"wants to take people skills to a technical product role"</div>
+        <div class="sig-result f-res">Clear motivation signal detected → counts toward score, quality set by Layer 2</div>
+      </div>
+
+      <div class="signal-card">
+        <div class="sig-field">self_knowledge</div>
+        <div class="sig-state">
+          <span class="sig-badge p">🟡 PARTIAL</span>
+          <span style="font-size:.63rem;color:rgba(255,255,255,.4)">Self Awareness</span>
+        </div>
+        <div class="sig-quote">"I'm good with people, I have empathy" — claims without concrete examples</div>
+        <div class="sig-result p-res">Trait present but not substantiated → caps score at 3 unless upgraded by probe</div>
+      </div>
+
+      <div class="signal-card">
+        <div class="sig-field">gap_acknowledgment</div>
+        <div class="sig-state">
+          <span class="sig-badge e">⬜ EMPTY</span>
+          <span style="font-size:.63rem;color:rgba(255,255,255,.4)">Self Awareness</span>
+        </div>
+        <div class="sig-quote">No limitation or growth area mentioned in core answer</div>
+        <div class="sig-result e-res">Signal absent → probe triggered: "What's one area you're still developing?"</div>
+      </div>
+
+    </div>
+    <div class="signal-bts-note">
+      <i class="fa-duotone fa-eye" style="color:var(--tan);flex-shrink:0"></i>
+      The Behind the Scenes panel in the next slide shows all 18 fields being evaluated in real time — watch how the AI responds when a field stays empty after probing.
+    </div>
+  </div>
+</div>
+
+<!-- STAGE 4: DEMO -->
+<!-- STAGE 4: PRE-SCREEN -->
+<div class="stage" id="stage-4">
+  <div class="demo-banner">
+    <span class="demo-banner-label"><i class="fa-solid fa-crosshairs"></i> CANDIDATE VIEW — Pre-Screen</span>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="bts-toggle-btn" id="pbts-btn" onclick="togglePBTS()">
+        <i class="fa-duotone fa-magnifying-glass"></i> Behind the Scenes
+      </button>
+    </div>
+  </div>
+  <div class="demo-body">
+    <!-- Pre-screen chat -->
+    <div class="chat-side">
+      <div class="chat-hd">
+        <div class="chat-av"><i class="fa-duotone fa-robot"></i></div>
+        <div class="chat-hd-info"><strong>Influx AI</strong><span>Pre-Screen · Logistics</span></div>
+        <div class="online"></div>
+      </div>
+      <div class="chat-msgs" id="pscreen-msgs"></div>
+      <div class="chat-input-area" id="pscreen-input-area">
+        <textarea class="ci" id="psi" placeholder="Type your response…" rows="1" disabled></textarea>
+        <button class="sb" id="psb" onclick="handlePrescreenSend()" disabled>
+          <i class="fa-solid fa-paper-plane-top"></i>
+        </button>
+      </div>
+    </div>
+    <!-- Pre-screen BTS -->
+    <div class="bts-panel" id="pbts-panel">
+      <div class="bts-inner">
+        <div class="bts-head"><i class="fa-duotone fa-magnifying-glass" style="margin-right:5px"></i> Behind the Scenes</div>
+        <div class="bts-content-wrap" id="pbts-content-wrap">
+          <div class="bts-content" id="pbts-content"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="stage" id="stage-5">
+  <div class="demo-banner">
+    <span class="demo-banner-label"><i class="fa-solid fa-crosshairs"></i> CANDIDATE VIEW — Behavioral Interview</span>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="skip-chat-btn" id="skip-btn" onclick="skipChat()">
+        <i class="fa-solid fa-forward-fast"></i> Fill All &amp; Skip
+      </button>
+      <button class="bts-toggle-btn" id="bts-btn" onclick="toggleBTS()">
+        <i class="fa-duotone fa-magnifying-glass"></i> Behind the Scenes
+      </button>
+    </div>
+  </div>
+  <div class="demo-body">
+    <!-- Chat -->
+    <div class="chat-side">
+      <div class="chat-hd">
+        <div class="chat-av"><i class="fa-duotone fa-robot"></i></div>
+        <div class="chat-hd-info"><strong>Influx AI</strong><span>Talent Assessment</span></div>
+        <div class="online"></div>
+      </div>
+      <div class="chat-prog">
+        <span class="cprog-lbl">Progress</span>
+        <div class="cprog-segs" id="cprog-segs"></div>
+      </div>
+      <div class="chat-msgs" id="chat-msgs"></div>
+      <div class="chat-input-area" id="input-area">
+        <textarea class="ci" id="ci" placeholder="Type your response…" rows="1" disabled></textarea>
+        <button class="sb" id="sb" onclick="handleSend()" disabled>
+          <i class="fa-solid fa-paper-plane-top"></i>
+        </button>
+      </div>
+    </div>
+    <!-- BTS -->
+    <div class="bts-panel" id="bts-panel">
+      <div class="bts-inner">
+        <div class="bts-head"><i class="fa-duotone fa-magnifying-glass" style="margin-right:5px"></i> Behind the Scenes</div>
+        <div class="bts-content-wrap" id="bts-content-wrap">
+          <div class="bts-content" id="bts-content"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- STAGE 6: DASHBOARD -->
+<div class="stage" id="stage-6">
+  <div class="dash-banner">
+    <i class="fa-duotone fa-chart-line"></i> RECRUITER VIEW — This is what the recruiter sees
+  </div>
+  <div id="dash-locked-view" class="dash-locked">
+    <i class="fa-duotone fa-lock-keyhole"></i>
+    <h3>Assessment in progress…</h3>
+    <p>The dashboard unlocks once the candidate completes the interview.</p>
+  </div>
+  <div id="dash-full" style="display:none" class="dash-body">
+    <div class="dash-header">
+      <div class="gauge-wrap">
+        <svg viewBox="0 0 100 100"><circle class="gauge-bg" cx="50" cy="50" r="39"/><circle class="gauge-ring" id="gauge-ring" cx="50" cy="50" r="39"/></svg>
+        <div class="gauge-txt"><span class="gauge-score">4.0</span><span class="gauge-denom">/ 5.0</span></div>
+      </div>
+      <div class="dash-hdr-info">
+        <h1>Candidate Assessment Report</h1>
+        <div class="dash-date" id="dash-date"></div>
+        <div class="rec-badge"><i class="fa-solid fa-circle-check"></i> Yes — Recommend for next stage</div>
+        <div class="debug-row">
+          <label class="tog"><input type="checkbox" id="dbg-chk" onchange="toggleDebug()"><span class="tog-sl"></span></label>
+          <label for="dbg-chk">Show Internal Reasoning</label>
+        </div>
+      </div>
+    </div>
+    <!-- Scoring methodology accordion -->
+    <details class="method-box">
+      <summary class="method-summary">
+        <i class="fa-duotone fa-code" style="color:var(--denim)"></i>
+        <span>How This Was Scored — Prompt Engineering</span>
+        <i class="fa-solid fa-chevron-down method-chev"></i>
+      </summary>
+      <div class="method-body">
+        <div class="method-cols">
+          <div class="method-col">
+            <div class="method-prompt-badge a">Prompt A</div>
+            <h4>AI Interviewer</h4>
+            <p>Conducts the chat. Generates behavioral questions from structured templates (Q1–Q5). After each answer, runs <strong>Layer 1</strong> — checks 18 signal fields per trait and marks each as Filled, Partial, Empty, or Negative. Generates targeted probes for empty fields. Max 1 probe per trait. Candidate never knows what signals are being checked.</p>
+          </div>
+          <div class="method-col">
+            <div class="method-prompt-badge b">Prompt B</div>
+            <h4>AI Scorer</h4>
+            <p>Runs after the full transcript is complete. Applies <strong>Layer 2</strong> quality descriptors — distinguishes between a Score 5 and Score 4 fill per signal field. Combines both layers using a per-trait scoring matrix built from 100+ recruiter-benchmarked Best/Accepted/Poor samples. Outputs scores, evidence, and holistic notes.</p>
+          </div>
+        </div>
+        <div class="method-rubric">
+          <div class="method-rub-title">Scoring Scale — Calibrated Against Recruiter Benchmarks</div>
+          <div class="method-rub-row">
+            <span class="mrub s5">5 — Exceptional</span><span class="mrub-desc">All signal fields filled at Score 5 quality. Intentional, specific, goes well beyond the expected bar. Example: motivation tied to genuine career pivot, not generic interest.</span>
+          </div>
+          <div class="method-rub-row">
+            <span class="mrub s4">4 — Strong</span><span class="mrub-desc">All fields filled at Score 4 quality. Clear, honest, professional — meets the standard. Proactive and self-directed, but less intentional than a 5.</span>
+          </div>
+          <div class="method-rub-row">
+            <span class="mrub s3">3 — Adequate</span><span class="mrub-desc">Mix of filled and partially filled fields. Generic or scripted. Functional, but signals lack depth. No negative fills.</span>
+          </div>
+          <div class="method-rub-row">
+            <span class="mrub s2">2 — Weak</span><span class="mrub-desc">Mostly empty after probing. Vague, disconnected, or minimal effort. No strong evidence for the trait.</span>
+          </div>
+          <div class="method-rub-row">
+            <span class="mrub s1">1 — Poor</span><span class="mrub-desc">Negative fills present. Candidate's answer actively contradicts the trait — blaming, avoidant, or disengaged.</span>
+          </div>
+        </div>
+        <div class="method-bar-note">
+          <i class="fa-solid fa-bolt" style="color:var(--tan)"></i>
+          <strong>Fast-Track Bar: ≥4.5 average</strong> — candidates who clear this threshold are automatically offered a recruiter slot via calendar integration. All others enter the standard review queue.
+        </div>
+      </div>
+    </details>
+    <div class="sec-hd">Trait Assessments</div>
+    <div class="cards-grid" id="cards-grid"></div>
+    <div class="radar-box"><div id="radar-container"></div></div>
+    <div class="likert-box">
+      <div class="likert-title">Overall Recommendation</div>
+      <div class="likert-row likert-current">
+        <span class="likert-badge lb-4">4.0 — Yes ✓</span>
+        <span class="likert-desc"><strong>Recommend for next stage.</strong> Score ≥ 3.5 — candidate meets the standard across all traits.</span>
+      </div>
+      <div class="likert-row" style="opacity:.45">
+        <span class="likert-badge lb-5">4.5+ — Strong Yes</span>
+        <span class="likert-desc">Recommend with high confidence — fast-track eligible, instant scheduling offered.</span>
+      </div>
+      <div class="likert-row" style="opacity:.45">
+        <span class="likert-badge lb-3">2.5–3.4 — Neutral</span>
+        <span class="likert-desc">Borderline — flag for human review. Do not auto-advance.</span>
+      </div>
+      <div class="likert-row" style="opacity:.45">
+        <span class="likert-badge lb-2">1.5–2.4 — No</span>
+        <span class="likert-desc">Do not recommend — significant signal gaps.</span>
+      </div>
+      <div class="likert-row" style="opacity:.45">
+        <span class="likert-badge lb-1">&lt;1.5 — Strong No</span>
+        <span class="likert-desc">Do not recommend — multiple negative fills detected.</span>
+      </div>
+    </div>
+    <div class="note-box holistic">
+      <h3><i class="fa-duotone fa-sparkles" style="color:var(--denim)"></i> Holistic Notes</h3>
+      <p>The agency demonstrated in Q5 (test account experimentation, independent resolution) is consistent with the self-direction shown in Q2 (staying late independently to learn the CRM, creating a guide). A pattern of proactive self-sufficiency emerges across both learning and problem-solving contexts.</p>
+    </div>
+    <div class="note-box integrity">
+      <h3><i class="fa-duotone fa-triangle-exclamation" style="color:var(--sun)"></i> Integrity Notes</h3>
+      <p>Probe responses in Q3 and Q4 show a register shift — core answers are specific and narrative while some probe responses become more polished and framework-like. This suggests possible rehearsed responses when initial examples are exhausted. Worth pressing harder on probes in subsequent rounds.</p>
+    </div>
+    <div class="note-box summary">
+      <h3><i class="fa-duotone fa-file-lines" style="color:var(--tan)"></i> Summary</h3>
+      <p>This candidate presents as a motivated, self-directed professional making an intentional transition from hospitality to tech support. Their strongest signal is agency — the Q5 answer demonstrating test-account experimentation and fully independent resolution is genuinely strong. Learning agility and systematic thinking are both solid at score 4. Primary development areas are self-awareness (generic under probing, no gaps acknowledged) and process orientation (tactical under pressure but no evidence of systemic improvement). In the next round, probe deeper on self-reflection and explore whether they think systemically about preventing recurring issues.</p>
+    </div>
+  </div>
+</div>
+
+<!-- STAGE 7: NEXT STEPS -->
+<div class="stage next-stage" id="stage-7">
+  <h2 class="slide-title">What Comes Next</h2>
+  <p class="slide-sub">The concept is validated. Building it requires an HR × Engineering collaboration.</p>
+  <div class="next-cols">
+
+    <!-- Box 1: What to Build -->
+    <div class="next-box">
+      <div class="next-box-head">
+        <i class="fa-duotone fa-screwdriver-wrench"></i>
+        <span>What Needs to Be Built</span>
+      </div>
+      <table class="next-inner-table">
+        <tbody>
+          <tr>
+            <td class="nit-item">Web-based chat interface</td>
+            <td class="nit-desc">Candidate-facing UI, integrated with Anthropic API (Claude)</td>
+          </tr>
+          <tr>
+            <td class="nit-item">Scoring pipeline</td>
+            <td class="nit-desc">Runs Prompt B post-interview, stores transcript and scores</td>
+          </tr>
+          <tr>
+            <td class="nit-item">People App integration</td>
+            <td class="nit-desc">Assessment report + scores stored in PA. Score ≥4.5 triggers Calendly link automatically; &lt;4.5 routes to standard review queue</td>
+          </tr>
+          <tr>
+            <td class="nit-item">Anthropic API access</td>
+            <td class="nit-desc">~$5 initial credit; minimal ongoing cost</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Box 2: Cost -->
+    <div class="next-box">
+      <div class="next-box-head">
+        <i class="fa-duotone fa-coin"></i>
+        <span>Cost Estimate</span>
+      </div>
+      <table class="next-inner-table">
+        <tbody>
+          <tr>
+            <td class="nit-item">~$0.07 per candidate</td>
+            <td class="nit-desc">Full interview + scoring across both prompts</td>
+          </tr>
+          <tr>
+            <td class="nit-item">Under $15/month</td>
+            <td class="nit-desc">At 200+ candidates/month total API cost</td>
+          </tr>
+          <tr>
+            <td class="nit-item">Current cost (comparison)</td>
+            <td class="nit-desc">15–20 min recruiter time × volume of applicants per month</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Box 3: Timeline -->
+    <div class="next-box">
+      <div class="next-box-head">
+        <i class="fa-duotone fa-calendar-check"></i>
+        <span>Timeline from Approval</span>
+      </div>
+      <table class="next-inner-table">
+        <tbody>
+          <tr>
+            <td class="nit-item">Prototype build</td>
+            <td class="nit-desc">1–2 weeks — HR + Engineering working together</td>
+          </tr>
+          <tr>
+            <td class="nit-item">Pilot with real candidates</td>
+            <td class="nit-desc">2 weeks — run alongside existing Typeform process</td>
+          </tr>
+          <tr>
+            <td class="nit-item">Full deployment</td>
+            <td class="nit-desc">~1 month — PA integration, fast-track routing live</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+  <!-- Recruiter capacity analysis -->
+  <div class="rec-analysis">
+    <div class="rec-analysis-hd">
+      <i class="fa-duotone fa-users-gear" style="color:var(--tan);font-size:15px"></i>
+      <span>Recruiter Capacity Analysis — Manual vs. AI</span>
+      <span class="rec-analysis-sub">At current screening volume (est. 200 candidates/month)</span>
+    </div>
+    <div class="rec-analysis-body">
+      <div class="rec-col manual">
+        <div class="rec-col-head">Manual Screening</div>
+        <div class="rec-row"><span class="rec-lbl">Recruiter rate</span><span class="rec-val rec-val-sm">$532/mo · 176 hrs · <strong>$3.02/hr</strong></span></div>
+        <div class="rec-row"><span class="rec-lbl">Time per candidate</span><span class="rec-val">15–20 min screening process</span></div>
+        <div class="rec-row"><span class="rec-lbl">Avg used</span><span class="rec-val rec-val-sm">17.5 min per candidate</span></div>
+        <div class="rec-row"><span class="rec-lbl">Labor cost per candidate</span><span class="rec-val rec-val-hi">~$0.88 <span style="font-size:.65rem;font-weight:400;color:var(--char)">(17.5 min × $3.02/hr)</span></span></div>
+        <div class="rec-row"><span class="rec-lbl">Capacity per recruiter</span><span class="rec-val">~274 candidates/month</span></div>
+        <div class="rec-row"><span class="rec-lbl">Recruiters needed (200/mo)</span><span class="rec-val rec-val-hi">~1 recruiter (73% capacity)</span></div>
+        <div class="rec-row"><span class="rec-lbl">Screening labor cost (200/mo)</span><span class="rec-val rec-val-hi">~$176/month</span></div>
+        <div class="rec-row"><span class="rec-lbl">Runs in parallel?</span><span class="rec-val rec-val-no">No — sequential queue</span></div>
+      </div>
+      <div class="rec-divider"><i class="fa-solid fa-arrow-right"></i></div>
+      <div class="rec-col ai">
+        <div class="rec-col-head">AI Assessment</div>
+        <div class="rec-row"><span class="rec-lbl">Recruiter rate</span><span class="rec-val rec-val-sm">Same — $3.02/hr (review only)</span></div>
+        <div class="rec-row"><span class="rec-lbl">Candidate time</span><span class="rec-val">~20–28 min <span style="font-size:.65rem;color:var(--char)">(self-serves)</span></span></div>
+        <div class="rec-row"><span class="rec-lbl">Recruiter time per candidate</span><span class="rec-val">~5 min <span style="font-size:.65rem;color:var(--char)">(report review only)</span></span></div>
+        <div class="rec-row"><span class="rec-lbl">Labor cost per candidate</span><span class="rec-val ai-hi">~$0.25 <span style="font-size:.65rem;font-weight:400;color:var(--char)">(5 min × $3.02/hr)</span></span></div>
+        <div class="rec-row"><span class="rec-lbl">API cost per candidate</span><span class="rec-val ai-hi">$0.07</span></div>
+        <div class="rec-row"><span class="rec-lbl">Total cost per candidate</span><span class="rec-val ai-hi"><strong>~$0.32</strong></span></div>
+        <div class="rec-row"><span class="rec-lbl">Screening cost (200/mo)</span><span class="rec-val ai-hi"><strong>~$64/month</strong></span></div>
+        <div class="rec-row"><span class="rec-lbl">Runs in parallel?</span><span class="rec-val rec-val-ok">Yes — all candidates simultaneously</span></div>
+      </div>
+    </div>
+    <!-- Fast-track breakdown -->
+    <div class="rec-ft-section">
+      <div class="rec-ft-hd">
+        <i class="fa-solid fa-bolt" style="color:var(--tan);font-size:12px"></i>
+        Fast-Track Impact — Top 20% at 200 candidates/month
+      </div>
+      <div class="rec-ft-body">
+        <div class="rec-ft-col">
+          <div class="rec-ft-tier top">
+            <div class="rec-ft-tier-lbl"><span class="rec-ft-badge hi">≥ 4.5 · Top 20%</span> ~40 candidates</div>
+            <div class="rec-ft-detail">AI sends Calendly link directly — recruiter skips screening process entirely, goes straight to proper interview with full assessment report in hand</div>
+            <div class="rec-ft-save">
+              <span class="rec-ft-save-lbl">Recruiter time saved</span>
+              <span class="rec-ft-save-val">40 × 12.5 min = <strong>8.3 hrs</strong> → <strong>~$25 saved</strong></span>
+            </div>
+          </div>
+        </div>
+        <div class="rec-ft-col">
+          <div class="rec-ft-tier std">
+            <div class="rec-ft-tier-lbl"><span class="rec-ft-badge lo">&lt; 4.5 · Bottom 80%</span> ~160 candidates</div>
+            <div class="rec-ft-detail">Recruiter reviews 5-min assessment report, then decides advance or reject — no scheduling overhead, no screening process required</div>
+            <div class="rec-ft-save">
+              <span class="rec-ft-save-lbl">Recruiter time saved</span>
+              <span class="rec-ft-save-val">160 × 12.5 min = <strong>33.3 hrs</strong> → <strong>~$101 saved</strong></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="rec-ft-total">
+        <span>Total screening labor saved (200/mo):</span>
+        <span><strong>41.7 hrs · ~$126 saved</strong> — from $176 manual down to ~$50 recruiter labor + $14 API = <strong>~$64/month total</strong></span>
+      </div>
+    </div>
+    <div class="rec-analysis-note">
+      <i class="fa-solid fa-chart-line" style="color:var(--tan)"></i>
+      Fast-tracking the top 20% also improves candidate experience — strong candidates get a slot within minutes of completing the assessment, not days later after a scheduling queue.
+    </div>
+  </div>
+
+  <div class="next-highlight eng">
+    <i class="fa-duotone fa-people-arrows"></i>
+    <div>
+      <p><strong>This is a concept — nothing has been built yet.</strong> The scoring framework, rubrics, and calibration are complete (93% accuracy against recruiter benchmarks). The next step is bringing Engineering on board to build the chat interface and pipeline integration together.</p>
+    </div>
+  </div>
+</div>
+
+<!-- PRESENTER NOTES -->
+<div class="pnotes-bar" id="pnotes">
+  <i class="fa-duotone fa-microphone pnotes-icon"></i>
+  <span class="pnotes-text" id="pnotes-text"></span>
+  <button class="pnotes-close" onclick="dismissNotes()">×</button>
+</div>
+
+<!-- CONFETTI -->
+<div id="confetti"></div>
+
+<script>
+'use strict';
+
+/* ─── STAGE DATA ────────────────────────── */
+const STAGES = [
+  { label:'Intro' },
+  { label:'Problem' },
+  { label:'How It Works' },
+  { label:'Pre-Screen' },
+  { label:'Live Demo' },
+  { label:'Results' },
+  { label:'Next Steps' },
+];
+
+const NOTES = [
+  "This system replaces manual screening with an AI interviewer that asks behavioral questions, probes for missing information, and scores candidates on a 1–5 scale across 6 traits.",
+  "The key difference: the AI doesn't just ask questions — it listens for specific signals and probes when they're missing, just like a trained interviewer would. It scores every candidate with the same rubric, eliminating inconsistency.",
+  "The interview and scoring are separate calls. This means we can re-score transcripts if we update the rubric, and candidates never see the scoring logic.",
+  "Before the behavioral interview, a lightweight pre-screen collects logistics and eligibility data — device specs, shift preference, IC status, salary acknowledgment. Pre-filled answers shown — click Send to advance. Toggle 'Behind the Scenes' to show the gate evaluation logic.",
+  "Now the behavioral interview. Pre-filled answers shown — click Send (or press Enter) to advance. Toggle 'Behind the Scenes' to show the scoring intelligence to the audience.",
+  "The scores and evidence are generated by Prompt B after the full transcript. The debug mode shows the exact signal field logic.",
+  "We've already built the scoring framework, calibrated it against real recruiter answers, and validated it works. Total monthly cost for 100+ candidates would be under $15.",
+];
+
+/* ─── PRE-SCREEN DATA ────────────────────── */
+const PRESCREEN = [
+  { text:"Hi! Before we get into the main assessment, I'd like to cover a few quick logistics — it'll only take a few minutes. Ready to get started?",
+    wait:true, prefill:"Sure, let's go!" },
+  { text:"First up — could you describe your device setup for us? Things like your laptop or desktop specs, and roughly how fast your internet connection is?",
+    wait:true, prefill:"I'm on a Windows laptop — Intel i7, 16GB RAM. My internet is around 50 Mbps download." },
+  { text:"Got it. Are you currently in any other recruitment processes right now?",
+    wait:true, prefill:"I'm in the early stages with one other company, but nothing has progressed yet." },
+  { text:"Thanks. Let me walk you through how hours work here — it's 44 hours a week, 8 hours a day. The standard schedule is Monday to Friday, though once every two weeks there's a weekend day. Here are the shift options:\n\n1. Regular — 9 AM to 5 PM\n2. Morning — starts at 5 or 6 AM\n3. Afternoon — noon to 9 PM\n4. Graveyard — 8 PM to 4 AM\n5. Weekend — Wednesday to Sunday\n\nCould you rank these from most to least preferred? Just type the numbers in order — for example: 1, 3, 2, 5, 4",
+    wait:true, prefill:"1, 3, 2, 4, 5" },
+  { text:"Good to know. For this role, there are times when customers prefer to speak by phone rather than chat. Are you comfortable with voice support as part of your day-to-day?",
+    wait:true, prefill:"Yes, I'm comfortable with that." },
+  { text:"One practical thing to cover — this role is structured as an independent contractor position. That means there's no employer-provided health insurance or tax coverage. Just want to make sure you're comfortable with that arrangement.",
+    wait:true, prefill:"Yes, I'm aware of that and I'm comfortable with it." },
+  { text:"Last thing — the starting salary for this role is within our standard entry-level range, which we'll discuss in detail at the next stage. Just want to confirm you're okay to continue on that basis.",
+    wait:true, prefill:"Yes, I've seen the range and I'm happy to continue." },
+  { text:"That's all I needed on the logistics side. Thanks for your patience with these quick questions — we'll be moving into the main part of the assessment now.",
+    wait:false, final:true },
+];
+
+const PBTS = [
+  { onQ:`<b>Initializing Pre-Screen</b>\n\nItems to collect (6):\n├─ device_specs\n├─ competing_processes\n├─ shift_preference\n├─ voice_support\n├─ ic_status\n└─ salary\n\nWaiting for candidate to confirm…`, onA:null },
+  { onQ:`<b>Collecting: device_specs</b>\n\nLooking for:\n├─ Device type / specs\n└─ Internet speed`, onA:`<b>Captured: device_specs</b>\n\n├─ value: "Intel i7, 16GB RAM"\n├─ internet_speed: "50 Mbps"\n└─ adequacy: <span class="f">✅ ADEQUATE</span>\n   (Meets: min 8GB RAM, 10 Mbps)\n\n<b class="ok">→ Gate: PASS</b>` },
+  { onQ:`<b>Collecting: competing_processes</b>\n\nLooking for:\n└─ Active applications elsewhere`, onA:`<b>Captured: competing_processes</b>\n\n└─ value: "Early stages, one other"\n\n<b>→ Gate: INFORMATIONAL</b>\n   (no knockout configured)` },
+  { onQ:`<b>Collecting: shift_preference</b>\n\nPresenting numbered options:\n  1. Regular (9–5)\n  2. Morning (5/6 AM)\n  3. Afternoon (12–9 PM)\n  4. Graveyard (8 PM–4 AM)\n  5. Weekend (Wed–Sun)\n\nAsking candidate to rank 1→5\n(most → least preferred)`, onA:`<b>Captured: shift_preference</b>\n\nInput: "1, 3, 2, 4, 5"\n\nranking: [\n  <span class="f">"regular"</span>,    ← rank 1\n  <span class="f">"afternoon"</span>,  ← rank 2\n  <span class="f">"morning"</span>,    ← rank 3\n  "graveyard",  ← rank 4\n  "weekend"     ← rank 5\n]\n\n<b class="ok">→ Gate: PASS</b>\n   (primary: regular — available)` },
+  { onQ:`<b>Collecting: voice_support</b>\n\n[Role-conditional: enabled for\nclient-facing positions]\n\nLooking for:\n└─ Comfortable with phone support`, onA:`<b>Captured: voice_support</b>\n\n├─ comfortable: <span class="f">true</span>\n└─ evidence: "I'm comfortable with that"\n\n<b class="ok">→ Gate: PASS</b>` },
+  { onQ:`<b>Collecting: ic_status</b>\n\nPresenting:\n├─ Independent contractor status\n├─ No employer health insurance\n└─ No employer tax coverage`, onA:`<b>Captured: ic_status</b>\n\n├─ accepts: <span class="f">true</span>\n└─ evidence: "aware and comfortable"\n\n<b class="ok">→ Gate: PASS</b>` },
+  { onQ:`<b>Collecting: salary</b>\n\nPresenting: entry-level range\n[from template: salary_range]`, onA:`<b>Captured: salary</b>\n\n├─ acknowledged: <span class="f">true</span>\n└─ evidence: "happy to continue"\n\n<b class="ok">→ Gate: PASS</b>` },
+  { onQ:`<b>Gate Evaluation Complete</b>\n\n<span class="f">✅ device_specs</span>          PASS\n📋 competing_processes   INFORMATIONAL\n<span class="f">✅ shift_preference</span>      PASS\n<span class="f">✅ voice_support</span>         PASS\n<span class="f">✅ ic_status</span>             PASS\n<span class="f">✅ salary</span>                PASS\n\n<b>prescreen_status:</b> <span class="f">completed_clear</span>\n<b>prescreen_flagged_reasons:</b> []\n\n<b class="ok">→ Proceed to behavioral interview</b>`, onA:null },
+];
+
+/* ─── SCRIPT ────────────────────────────── */
+const SCRIPT = [
+  { text:"Hi! Thanks for taking the time to chat with us today. I'm going to ask you a few questions so we can get to know you better. There are no right or wrong answers — just be yourself. Ready to get started?",
+    wait:true, q:0,
+    prefill:"Yes, let's go." },
+  { text:"Great, let's jump in. Could you share a bit about your background and what brought you to apply for this role?",
+    wait:true, q:1,
+    prefill:"I've spent the last four years in hospitality management, specifically running high-volume shifts where I had to solve problems on the fly. I'm applying for this role because I want to take those people skills and apply them to a technical product. I've reached a point where I want to build a career in the tech industry, and I believe my experience handling high-pressure situations and difficult personalities makes me a perfect fit for a support team that values empathy and quick thinking." },
+  { text:"Thank you for sharing that. I'm curious — what's been the most challenging part of your work so far?",
+    wait:true, q:1,
+    prefill:"I've worked in customer-facing roles for a few years, mostly handling customer questions and resolving issues. Over time, I realized I enjoy helping people and staying calm in difficult situations." },
+  { text:"Got it. Appreciate you walking me through that. Let's move on to a different topic.",
+    wait:false, q:1 },
+  { text:"Can you think of a time you had to pick up a new tool or process that was unfamiliar to you? Walk us through how you went about it.",
+    wait:true, q:2,
+    prefill:"In my last role, we switched from a basic spreadsheet to a full CRM system basically overnight. I realized the team was struggling, so I stayed an hour late for three days to go through all the training videos and help articles. I didn't just learn how to use it — I figured out how to automate our most common tasks. I ended up making a Quick Start guide for the rest of the team. My manager asked me to lead onboarding for the next group of hires because I'd mastered the workflows so fast." },
+  { text:"Thank you for that. How did you know you had a solid enough handle on it to start using it confidently?",
+    wait:true, q:2,
+    prefill:"When my team introduced the new CRM with very little transition time, I reviewed the SOPs, watched recorded trainings, and practiced using the tool during low-volume hours. I also asked questions early to avoid mistakes. Within a week, I was handling cases independently with minimal errors and later helped teammates who were still adjusting." },
+  { text:"Got it. Thanks for that detail. Let me shift gears a bit.",
+    wait:false, q:2 },
+  { text:"Tell us about a time something wasn't working and it wasn't clear why. What did you do to figure out what was going on?",
+    wait:true, q:3,
+    prefill:"The first thing I do is look up their email in our admin tool to see if their account is active or locked due to failed logins. I don't want to ask them questions I can answer myself. If it's active, I check our internal Slack or Status page to see if there's a known bug. When I reply, I tell them what I've already checked — 'I've verified your account is active on our end, so let's look at your browser or if there's a specific error code.' I try to narrow it down to the where and when so we aren't guessing." },
+  { text:"Appreciate you walking me through that. And in a situation like that, what did you end up finding was actually going on?",
+    wait:true, q:3,
+    prefill:"I broke the problem down by checking recent system changes, reviewing similar past tickets, and recreating the issue using limited data. I identified a pattern related to a specific payment method and escalated it with clear evidence. The issue was fixed, and repeat cases dropped significantly." },
+  { text:"Thank you for that. I'd like to ask you about a different situation now.",
+    wait:false, q:3 },
+  { text:"Can you describe a time you were under real pressure at work — whether from time, workload, or expectations? How did you handle it?",
+    wait:true, q:4,
+    prefill:"This happened during the Thanksgiving period — very high volume of chats. One case involved a high-value order that was delayed with missing items. The customer was very annoyed. I acknowledged the situation and showed empathy first to calm them down. Once they were calm, I explained the resolution was blocked because the refund was over $100 and needed escalation. I reassured them we'd take care of it and issued an extra $10 credit as appeasement. By the end, they were calm, understanding, and appreciative — and I was handling multiple customers at the same time." },
+  { text:"Thank you for sharing that. You mentioned handling a lot at once — how did you decide what to focus on when everything was coming in?",
+    wait:true, q:4,
+    prefill:"I stayed calm, prioritized tasks based on impact and deadlines, communicated clearly with customers and my manager, and focused on accuracy over speed. All cases were resolved within SLA, and I received positive feedback for staying reliable under pressure." },
+  { text:"Appreciate you walking me through that. Let's move on to one last topic.",
+    wait:false, q:4 },
+  { text:"Think of a time you were stuck on something and the path forward wasn't obvious. What did you end up doing?",
+    wait:true, q:5,
+    prefill:"I had a customer issue outside our documented knowledge base during an off-shift when no team support was available. I reviewed similar cases and cross-referenced documentation to narrow down possible causes. I applied the solution that aligned with policy and best practices, clearly communicated the steps to the customer, and documented the case for future reference. The issue was resolved without escalation, and the documentation later helped other agents handle similar cases independently." },
+  { text:"Thank you for that. When the first things you looked at didn't give you a clear answer, what did you try next?",
+    wait:true, q:5,
+    prefill:"I tested the scenario using a test account to confirm my assumption and then provided the customer with a workaround. I documented the case thoroughly and flagged it for the next shift to review. The issue was later confirmed as expected behavior, and my documentation was added to the knowledge base to help other agents handle similar cases." },
+  { text:"Got it. Thanks for sharing that.\n\nThat's everything I wanted to ask. Thank you so much for taking the time — I really appreciate you sharing your experiences with us. We'll be in touch about next steps. Have a great day!",
+    wait:false, q:5, final:true },
+];
+
+/* ─── BTS DATA ───────────────────────────── */
+const BTS = [
+  { onQ:`<b>Initializing Assessment</b>\n\nTraits: Commitment, Self Awareness\nSignal fields: 6\n\nWaiting for candidate to confirm readiness…`, onA:null },
+  { onQ:`<b>Q1 — Commitment + Self Awareness</b>\n\nListening for:\n<b>Commitment</b>\n├─ motivation_type\n├─ role_specificity\n└─ career_direction\n\n<b>Self Awareness</b>\n├─ self_knowledge\n├─ gap_acknowledgment\n└─ authenticity`, onA:`<b>Field Update — Q1 Core Answer</b>\n\n<b>Commitment:</b>\n├─ <span class="f">✅ motivation_type: FILLED</span>\n│  "wants to take people skills to tech"\n├─ <span class="f">✅ role_specificity: FILLED</span>\n│  "hospitality → support team"\n└─ <span class="f">✅ career_direction: FILLED</span>\n   "build a career in tech industry"\n\n<b>Self Awareness:</b>\n├─ <span class="p">🟡 self_knowledge: PARTIAL</span>\n│  Claims without examples ("people skills")\n├─ <span class="e">⬜ gap_acknowledgment: EMPTY</span>\n│  No limitation mentioned\n└─ <span class="p">🟡 authenticity: PARTIAL</span>\n   Coherent narrative, interview-polished\n\n<b class="probe">→ Probe triggered: gap_acknowledgment EMPTY</b>` },
+  { onQ:`<b>Probing: Self Awareness</b>\n\nTarget: gap_acknowledgment\nReason: no limitation acknowledged\nProbe 1 of 1`, onA:`<b>Re-checking Self Awareness:</b>\n\n├─ <span class="p">🟡 self_knowledge: PARTIAL</span>\n│  Still generic ("enjoy helping people")\n├─ <span class="e">⬜ gap_acknowledgment: EMPTY</span>\n│  Probe didn't surface a gap\n└─ <span class="p">🟡 authenticity: PARTIAL</span>\n   Regressed to vaguer language\n\n<b class="warn">→ Probe cap reached (1/1). Moving on.</b>` },
+  { onQ:`<b>Q1 Complete</b>\n\nCommitment:    <span class="f">✅ Score 4</span>\nSelf Awareness: <span class="p">🟡 Score 3</span>\n\nTransitioning → Q2: Learning Agility`, onA:null },
+  { onQ:`<b>Q2 — Learning Agility</b>\n\nListening for:\n├─ learning_method\n├─ self_direction\n└─ validation`, onA:`<b>Field Update — Q2 Core Answer</b>\n\n<b>Learning Agility:</b>\n├─ <span class="f">✅ learning_method: FILLED</span>\n│  "stayed late 3 days, training videos"\n├─ <span class="f">✅ self_direction: FILLED</span>\n│  "self-initiated, made Quick Start guide"\n└─ <span class="e">⬜ validation: EMPTY</span>\n   No deliberate validation step described\n\n<b class="probe">→ Probe triggered: validation EMPTY</b>` },
+  { onQ:`<b>Probing: Learning Agility</b>\n\nTarget: validation\nReason: no readiness confirmation described\nProbe 1 of 1`, onA:`<b>Re-checking Learning Agility:</b>\n\n├─ <span class="f">✅ learning_method: FILLED</span>\n├─ <span class="f">✅ self_direction: FILLED</span>\n└─ <span class="f">✅ validation: FILLED</span>\n   "practiced during low-volume hours"\n\n<b class="ok">→ All fields filled. Moving on.</b>` },
+  { onQ:`<b>Q2 Complete</b>\n\nLearning Agility: <span class="f">✅ Score 4</span>\n\nTransitioning → Q3: Intelligence`, onA:null },
+  { onQ:`<b>Q3 — Intelligence</b>\n\nListening for:\n├─ hypothesis_formation\n├─ systematic_approach\n└─ root_cause_vs_symptom`, onA:`<b>Field Update — Q3 Core Answer</b>\n\n<b>Intelligence:</b>\n├─ <span class="f">✅ hypothesis_formation: FILLED</span>\n│  "account → known bugs → client-side"\n├─ <span class="f">✅ systematic_approach: FILLED</span>\n│  "sequential elimination, conditional logic"\n└─ <span class="e">⬜ root_cause_vs_symptom: EMPTY</span>\n   Process described, no specific cause found\n\n<b class="probe">→ Probe triggered: root_cause_vs_symptom EMPTY</b>` },
+  { onQ:`<b>Probing: Intelligence</b>\n\nTarget: root_cause_vs_symptom\nReason: described process, no root cause\nProbe 1 of 1`, onA:`<b>Re-checking Intelligence:</b>\n\n├─ <span class="f">✅ hypothesis_formation: FILLED</span>\n├─ <span class="f">✅ systematic_approach: FILLED</span>\n└─ <span class="f">✅ root_cause_vs_symptom: FILLED</span>\n   "pattern related to specific payment method"\n\n<b class="ok">→ All fields filled. Moving on.</b>` },
+  { onQ:`<b>Q3 Complete</b>\n\nIntelligence: <span class="f">✅ Score 4</span>\n\nTransitioning → Q4: Conscientiousness + Self Awareness`, onA:null },
+  { onQ:`<b>Q4 — Conscientiousness + Self Awareness</b>\n\nListening for:\n<b>Conscientiousness</b>\n├─ pressure_response\n├─ process_orientation\n└─ execution_follow_through\n\n<b>Self Awareness</b>\n├─ communication_timing\n├─ emotional_ownership\n└─ stakeholder_empathy`, onA:`<b>Field Update — Q4 Core Answer</b>\n\n<b>Conscientiousness:</b>\n├─ <span class="f">✅ pressure_response: FILLED</span>\n│  "empathy → explanation → escalation"\n├─ <span class="e">⬜ process_orientation: EMPTY</span>\n│  No systemic change described\n└─ <span class="f">✅ execution_follow_through: FILLED</span>\n   "resolved within SLA"\n\n<b>Self Awareness:</b>\n├─ <span class="f">✅ communication_timing: FILLED</span>\n├─ <span class="f">✅ emotional_ownership: FILLED</span>\n│  "I" language throughout\n└─ <span class="p">🟡 stakeholder_empathy: PARTIAL</span>\n   Empathy as technique, not perspective-taking\n\n<b class="probe">→ Probe triggered: process_orientation EMPTY</b>` },
+  { onQ:`<b>Probing: Conscientiousness</b>\n\nTarget: process_orientation\nReason: no systemic improvement described\nProbe 1 of 1`, onA:`<b>Re-checking Conscientiousness:</b>\n\n├─ <span class="f">✅ pressure_response: FILLED</span>\n├─ <span class="e">⬜ process_orientation: EMPTY</span>\n│  In-moment tactics, no systemic change surfaced\n└─ <span class="f">✅ execution_follow_through: FILLED</span>\n\n<b class="warn">→ Probe cap reached (1/1). Moving on.</b>` },
+  { onQ:`<b>Q4 Complete</b>\n\nConscientiousness: <span class="f">✅ Score 4</span>\nSelf Awareness:    <span class="f">✅ Score 4</span>\n\nTransitioning → Q5: Agency`, onA:null },
+  { onQ:`<b>Q5 — Agency</b>\n\nListening for:\n├─ resourcefulness_depth\n├─ experimentation\n└─ self_sufficiency`, onA:`<b>Field Update — Q5 Core Answer</b>\n\n<b>Agency:</b>\n├─ <span class="f">✅ resourcefulness_depth: FILLED</span>\n│  "cross-referenced cases + docs"\n├─ <span class="e">⬜ experimentation: EMPTY</span>\n│  No active testing described\n└─ <span class="f">✅ self_sufficiency: FILLED</span>\n   "resolved without escalation, off-shift"\n\n<b class="probe">→ Probe triggered: experimentation EMPTY</b>` },
+  { onQ:`<b>Probing: Agency</b>\n\nTarget: experimentation\nReason: resolution described, no active testing\nProbe 1 of 1`, onA:`<b>Re-checking Agency:</b>\n\n├─ <span class="f">✅ resourcefulness_depth: FILLED</span>\n├─ <span class="f">✅ experimentation: FILLED</span>\n│  "tested using a test account"\n└─ <span class="f">✅ self_sufficiency: FILLED</span>\n\n<b class="ok">→ All fields filled. Score 5 — Simulation/Experimentation.</b>` },
+  { onQ:`<b>Interview Complete</b>\n\nGenerating assessment report…\n\n<b>Final Scores:</b>\n├─ Commitment:        <span class="f">4 / 5</span>\n├─ Self Aware. (Q1):  <span class="p">3 / 5</span>\n├─ Learning Agility:  <span class="f">4 / 5</span>\n├─ Intelligence:      <span class="f">4 / 5</span>\n├─ Conscientiousness: <span class="f">4 / 5</span>\n├─ Self Aware. (Q4):  <span class="f">4 / 5</span>\n└─ Agency:            <span class="f">5 / 5</span>\n\n<b>Overall: 4.0 / 5.0</b>\n<b class="ok">✅ Recommend for next stage</b>`, onA:null },
+];
+
+/* ─── SCORES DATA ───────────────────────── */
+const SCORES = [
+  { label:'Q1 · Commitment', title:'Professional Direction', score:4,
+    evid:'Candidate articulated a clear, internally motivated transition narrative grounding their motivation in growth and deeper problem-solving. Drew a transferable-skills bridge from hospitality to support. Role specificity stays at general transferable skills level without deep understanding of the specific role.',
+    debug:`Signal Fields:\n├─ motivation_type: ✅ FILLED (Score 5 quality)\n│  "wants to take people skills to a technical product"\n├─ role_specificity: ✅ FILLED (Score 4 quality)\n│  "experience handling high-pressure situations → support team"\n└─ career_direction: ✅ FILLED (Score 4 quality)\n   "build a career in the tech industry"\n\nScore: 4 — One field at 5, two at 4. Strong 4.` },
+  { label:'Q1 · Self Awareness', title:'Generic/Scripted', score:3,
+    evid:'Self-descriptions were functional claims within a motivation narrative rather than reflective self-assessment. No gap or limitation was acknowledged despite probing. The probe yielded generic language rather than deeper reflection.',
+    debug:`Signal Fields:\n├─ self_knowledge: 🟡 PARTIAL\n│  "people skills, empathy" — claims without examples\n├─ gap_acknowledgment: ⬜ EMPTY\n│  No limitation surfaced despite probe\n└─ authenticity: 🟡 PARTIAL\n   Probe response regressed to vaguer language\n\nScore: 3 — Two partial, one empty. Generic/Scripted.` },
+  { label:'Q2 · Learning Agility', title:'Proactive Diligence', score:4,
+    evid:'Described a concrete CRM migration scenario with structured self-directed learning over three consecutive days. Created a Quick Start guide and was asked to lead onboarding. Method was disciplined but linear. Validation through low-volume practice hours.',
+    debug:`Signal Fields:\n├─ learning_method: ✅ FILLED (Score 4 quality)\n│  "stayed an hour late 3 days, training videos, help articles"\n├─ self_direction: ✅ FILLED (Score 5 quality)\n│  Self-initiated, exhausted resources, became team resource\n└─ validation: ✅ FILLED (Score 4 quality)\n   "practiced during low-volume hours"\n\nScore: 4 — All filled, mix of 4 and 5 quality.` },
+  { label:'Q3 · Intelligence', title:'Systematic Checklist', score:4,
+    evid:'Laid out a logical diagnostic workflow with conditional reasoning. Each check informed the next step. Identified a pattern related to a specific payment method and escalated with evidence. Approach is practiced-workflow rather than hypothesis-driven.',
+    debug:`Signal Fields:\n├─ hypothesis_formation: ✅ FILLED (Score 4 quality)\n│  Mental priority order: account → known bugs → client-side\n├─ systematic_approach: ✅ FILLED (Score 4 quality)\n│  Sequential elimination with conditional logic\n└─ root_cause_vs_symptom: ✅ FILLED (Score 4 quality)\n   "identified a pattern related to a specific payment method"\n\nScore: 4 — All filled at score 4. Systematic Checklist.` },
+  { label:'Q4 · Conscientiousness', title:'High Effort', score:4,
+    evid:'Handled complex high-value customer issue during peak period while managing multiple chats. Approach was deliberate: empathy first, constraint explanation, escalation with reassurance. All cases resolved within SLA. Gap in process improvement — process_orientation stayed empty after probing.',
+    debug:`Signal Fields:\n├─ pressure_response: ✅ FILLED (Score 4 quality)\n│  Deliberate approach: empathy → explanation → escalation\n├─ process_orientation: 🟡 PARTIAL\n│  Documentation mentioned but as in-moment tracking, not systemic\n└─ execution_follow_through: ✅ FILLED (Score 4 quality)\n   All cases resolved within SLA\n\nScore: 4 — Two filled at 4, one partial. High Effort.` },
+  { label:'Q4 · Self Awareness', title:'Professional Ownership', score:4,
+    evid:"Consistent 'I' language, took ownership, communicated constraints proactively. Issued appeasement credit. Empathy toward customer demonstrated though framed somewhat instrumentally. No mention of downstream impact on other stakeholders.",
+    debug:`Signal Fields:\n├─ communication_timing: ✅ FILLED (Score 4 quality)\n│  Proactive communication during interaction\n├─ emotional_ownership: ✅ FILLED (Score 4 quality)\n│  "I" language throughout, took ownership\n└─ stakeholder_empathy: 🟡 PARTIAL\n   Empathy shown but framed as technique\n\nScore: 4 — Two filled at 4, one partial. Professional Ownership.` },
+  { label:'Q5 · Agency', title:'Simulation/Experimentation', score:5,
+    evid:'Faced undocumented issue during off-shift with no support. Cross-referenced past cases with documentation. Used test account to reproduce and confirm the issue. Resolved without escalation. Documentation added to knowledge base.',
+    debug:`Signal Fields:\n├─ resourcefulness_depth: ✅ FILLED (Score 4 quality)\n│  "cross-referenced past cases with documentation during off-shift"\n├─ experimentation: ✅ FILLED (Score 5 quality)\n│  "tested the scenario using a test account"\n└─ self_sufficiency: ✅ FILLED (Score 5 quality)\n   "resolved without escalation, no team support available"\n\nScore: 5 — All filled. experimentation + self_sufficiency at 5.\nFinal: 5 — Simulation/Experimentation.` },
+];
+
+/* ─── STATE ─────────────────────────────── */
+let currentStage = 1;
+let nextIdx = 0;
+let waiting = false;
+let chatDone = false;
+let chatStarted = false;
+let skipActive = false;
+let currentQ = 0;
+let btsOpen = false;
+let dashRendered = false;
+let notesDismissed = false;
+let prescreenNextIdx = 0;
+let prescreenDone = false;
+let prescreenStarted = false;
+let prescreenWaiting = false;
+
+/* ─── INIT ──────────────────────────────── */
+document.addEventListener('DOMContentLoaded', () => {
+  buildStepper();
+  buildChatProgress();
+  setDashDate();
+
+  const inp = document.getElementById('ci');
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
+  });
+  inp.addEventListener('input', () => {
+    inp.style.height = 'auto';
+    inp.style.height = Math.min(inp.scrollHeight, 100) + 'px';
+  });
+
+  const pinp = document.getElementById('psi');
+  pinp.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handlePrescreenSend(); }
+  });
+  pinp.addEventListener('input', () => {
+    pinp.style.height = 'auto';
+    pinp.style.height = Math.min(pinp.scrollHeight, 100) + 'px';
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' && currentStage !== 4 && currentStage !== 5) nextStage();
+    if (e.key === 'ArrowLeft'  && currentStage !== 4 && currentStage !== 5) prevStage();
+  });
+
+  activateStage(1);
+});
+
+/* ─── STEPPER ───────────────────────────── */
+function buildStepper() {
+  const el = document.getElementById('stepper');
+  STAGES.forEach((s, i) => {
+    const n = i + 1;
+    const step = document.createElement('div');
+    step.className = 'step';
+    step.id = `step-${n}`;
+    step.onclick = () => goToStage(n);
+    step.innerHTML = `<div class="step-dot">${n}</div><span class="step-label">${s.label}</span>`;
+    el.appendChild(step);
+    if (i < STAGES.length - 1) {
+      const line = document.createElement('div');
+      line.className = 'step-line';
+      el.appendChild(line);
+    }
+  });
+}
+
+function updateStepper() {
+  for (let i = 1; i <= 7; i++) {
+    const el = document.getElementById(`step-${i}`);
+    el.className = 'step' + (i === currentStage ? ' active' : i < currentStage ? ' done' : '');
+    if (i < currentStage) el.querySelector('.step-dot').innerHTML = '<i class="fa-solid fa-check" style="font-size:9px"></i>';
+    else el.querySelector('.step-dot').textContent = i;
+  }
+}
+
+/* ─── STAGE NAVIGATION ──────────────────── */
+function activateStage(n) {
+  document.querySelectorAll('.stage').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById(`stage-${n}`);
+  el.classList.add('active');
+  el.classList.remove('stage-fade-in');
+  void el.offsetWidth;
+  el.classList.add('stage-fade-in');
+
+  currentStage = n;
+  updateStepper();
+  updateNextBtn();
+  updateNotes();
+
+  if (n === 4 && !prescreenStarted) {
+    prescreenStarted = true;
+    setTimeout(showNextPrescreen, 700);
+  }
+  if (n === 5 && !chatStarted) {
+    chatStarted = true;
+    setTimeout(showNext, 700);
+  }
+  if (n === 6 && !dashRendered) {
+    dashRendered = true;
+    document.getElementById('dash-locked-view').style.display = 'none';
+    document.getElementById('dash-full').style.display = 'block';
+    renderDashboard();
+  }
+}
+
+function nextStage() {
+  if (currentStage === 4 && !prescreenDone) return;
+  if (currentStage === 5 && !chatDone) return;
+  if (currentStage < 7) activateStage(currentStage + 1);
+}
+
+function prevStage() {
+  if (currentStage > 1) activateStage(currentStage - 1);
+}
+
+function goToStage(n) { activateStage(n); }
+
+function updateNextBtn() {
+  const btn = document.getElementById('next-btn');
+  if (currentStage === 7) { btn.textContent = ''; btn.innerHTML = 'Done <i class="fa-solid fa-check"></i>'; btn.disabled = true; return; }
+  if (currentStage === 4 && prescreenDone) {
+    btn.innerHTML = 'Start Assessment <i class="fa-solid fa-arrow-right"></i>';
+    btn.disabled = false;
+    return;
+  }
+  btn.innerHTML = 'Next <i class="fa-solid fa-arrow-right"></i>';
+  btn.disabled = (currentStage === 4 && !prescreenDone) || (currentStage === 5 && !chatDone);
+}
+
+/* ─── PRESENTER NOTES ───────────────────── */
+function updateNotes() {
+  notesDismissed = false;
+  const bar = document.getElementById('pnotes');
+  const txt = document.getElementById('pnotes-text');
+  const btn = document.getElementById('notes-toggle-btn');
+  const note = NOTES[currentStage - 1];
+  if (note) { txt.textContent = note; bar.classList.remove('hidden'); btn.classList.add('active'); }
+  else { bar.classList.add('hidden'); btn.classList.remove('active'); }
+}
+
+function dismissNotes() {
+  document.getElementById('pnotes').classList.add('hidden');
+  document.getElementById('notes-toggle-btn').classList.remove('active');
+  notesDismissed = true;
+}
+
+function toggleNotes() {
+  const bar = document.getElementById('pnotes');
+  const btn = document.getElementById('notes-toggle-btn');
+  if (bar.classList.contains('hidden')) {
+    const note = NOTES[currentStage - 1];
+    if (note) {
+      document.getElementById('pnotes-text').textContent = note;
+      bar.classList.remove('hidden');
+      btn.classList.add('active');
+      notesDismissed = false;
+    }
+  } else {
+    bar.classList.add('hidden');
+    btn.classList.remove('active');
+    notesDismissed = true;
+  }
+}
+
+/* ─── CHAT PROGRESS ─────────────────────── */
+function buildChatProgress() {
+  const c = document.getElementById('cprog-segs');
+  for (let i = 1; i <= 5; i++) {
+    const d = document.createElement('div');
+    d.className = 'cprog-seg'; d.id = `cseg-${i}`; c.appendChild(d);
+  }
+}
+
+function setChatProgress(q) {
+  for (let i = 1; i <= 5; i++) {
+    const d = document.getElementById(`cseg-${i}`);
+    d.className = 'cprog-seg' + (i < q ? ' done' : i === q ? ' active' : '');
+  }
+}
+
+function completeChatProgress() {
+  for (let i = 1; i <= 5; i++) document.getElementById(`cseg-${i}`).className = 'cprog-seg done';
+}
+
+/* ─── CHAT ENGINE ───────────────────────── */
+function showNext() {
+  if (nextIdx >= SCRIPT.length) return;
+  const item = SCRIPT[nextIdx++];
+  const btsIdx = nextIdx - 1;
+
+  if (item.q > 0 && item.q !== currentQ) { currentQ = item.q; setChatProgress(currentQ); }
+
+  const typingEl = addTyping();
+  const delay = 1000 + Math.random() * 500;
+
+  setTimeout(() => {
+    removeEl(typingEl);
+    addMsg('ai', item.text);
+    setBTS(BTS[btsIdx]?.onQ);
+
+    if (skipActive) return;
+    if (item.final) {
+      finishInterview();
+    } else if (!item.wait) {
+      setTimeout(showNext, 1800);
+    } else {
+      enableInput(item.prefill);
+    }
+  }, delay);
+}
+
+function handleSend() {
+  const inp = document.getElementById('ci');
+  const txt = inp.value.trim();
+  if (!txt || !waiting) return;
+
+  const btsIdx = nextIdx - 1;
+  addMsg('you', txt);
+  inp.value = ''; inp.style.height = 'auto';
+  disableInput();
+  if (BTS[btsIdx]?.onA) setBTS(BTS[btsIdx].onA);
+  setTimeout(showNext, 1200);
+}
+
+function addMsg(type, text) {
+  const msgs = document.getElementById('chat-msgs');
+  const d = document.createElement('div'); d.className = `msg ${type}`;
+  const av = document.createElement('div'); av.className = `mv ${type}`;
+  av.innerHTML = type === 'ai' ? '<i class="fa-duotone fa-robot"></i>' : 'You';
+  const b = document.createElement('div'); b.className = 'mb';
+  const bt = document.createElement('div'); bt.className = 'mb-text'; bt.innerHTML = esc(text);
+  const ts = document.createElement('div'); ts.className = 'msg-ts';
+  const now = new Date();
+  ts.textContent = now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+  b.appendChild(bt); b.appendChild(ts);
+  d.appendChild(av); d.appendChild(b); msgs.appendChild(d); scrollDown();
+}
+
+function addTyping() {
+  const msgs = document.getElementById('chat-msgs');
+  const d = document.createElement('div'); d.className = 'typing-row';
+  const av = document.createElement('div'); av.className = 'mv ai';
+  av.innerHTML = '<i class="fa-duotone fa-robot"></i>';
+  const b = document.createElement('div'); b.className = 'typing-bub';
+  b.innerHTML = '<div class="td"></div><div class="td"></div><div class="td"></div>';
+  d.appendChild(av); d.appendChild(b); msgs.appendChild(d); scrollDown(); return d;
+}
+
+function removeEl(el) { if (el?.parentNode) el.parentNode.removeChild(el); }
+
+function enableInput(prefill) {
+  waiting = true;
+  const inp = document.getElementById('ci');
+  const btn = document.getElementById('sb');
+  inp.disabled = false; btn.disabled = false;
+  if (prefill) { inp.value = prefill; inp.style.height = 'auto'; inp.style.height = Math.min(inp.scrollHeight, 100) + 'px'; }
+  inp.focus();
+}
+
+function disableInput() {
+  waiting = false;
+  document.getElementById('ci').disabled = true;
+  document.getElementById('sb').disabled = true;
+}
+
+function scrollDown() {
+  const el = document.getElementById('chat-msgs');
+  requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; });
+}
+
+function finishInterview() {
+  chatDone = true;
+  completeChatProgress();
+  const skipBtn = document.getElementById('skip-btn');
+  if (skipBtn) skipBtn.disabled = true;
+  launchConfetti();
+  const avgScore = SCORES.reduce((s, c) => s + c.score, 0) / SCORES.length;
+  const area = document.getElementById('input-area');
+  if (avgScore >= 4) {
+    area.innerHTML = buildSchedPanel();
+  } else {
+    area.innerHTML = `<div class="complete-panel"><h3><i class="fa-solid fa-circle-check" style="margin-right:5px"></i>Interview Complete</h3><p>Thank you for your time — we'll be in touch about the next steps soon.</p></div>`;
+    document.getElementById('next-btn').disabled = false;
+    document.getElementById('next-btn').innerHTML = 'View Results <i class="fa-solid fa-arrow-right"></i>';
+  }
+}
+
+function buildSchedPanel() {
+  const today = new Date();
+  const fmtDate = (daysAhead) => {
+    const d = new Date(today); d.setDate(d.getDate() + daysAhead);
+    return d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+  };
+  const recruiters = [
+    { initials:'SL', name:'Sarah Lim', role:'Senior Talent Recruiter', color:'#547099',
+      slots:[[1,'10:00'],[2,'14:30'],[4,'11:00']] },
+    { initials:'MR', name:'Michael Raj', role:'Talent Acquisition Lead', color:'#587322',
+      slots:[[2,'09:30'],[3,'15:00'],[5,'10:30']] },
+    { initials:'AW', name:'Aisha Wong', role:'Talent Recruiter', color:'#8C152F',
+      slots:[[1,'15:30'],[3,'11:00'],[5,'14:00']] },
+  ];
+  const recHTML = recruiters.map(r => `
+    <div class="sched-rec">
+      <div class="sched-rec-hd">
+        <div class="sched-av" style="background:${r.color}">${r.initials}</div>
+        <div class="sched-rec-info"><strong>${r.name}</strong><span>${r.role}</span></div>
+      </div>
+      <div class="sched-slots">
+        ${r.slots.map(([d,t]) => `<button class="sched-slot" onclick="selectSlot(this,'${r.name}','${fmtDate(d)} · ${t}')">${fmtDate(d)} · ${t}</button>`).join('')}
+      </div>
+    </div>`).join('');
+  return `<div class="sched-panel">
+    <div class="sched-hd"><i class="fa-solid fa-bolt"></i><h3>You've been fast-tracked!</h3></div>
+    <p class="sched-sub">Your responses met our fast-track threshold. Select a time to speak with a recruiter — your assessment report will be reviewed by them before the call.</p>
+    <div class="sched-recruiters">${recHTML}</div>
+    <button class="sched-confirm" id="sched-confirm" disabled onclick="confirmSchedule()">Confirm Selected Slot</button>
+    <div class="sched-recruiter-note"><i class="fa-solid fa-lock" style="color:var(--char);margin-top:1px;flex-shrink:0"></i>Your assessment report is for recruiters only and will not be shared with you.</div>
+  </div>`;
+}
+
+function selectSlot(btn, recruiter, slot) {
+  document.querySelectorAll('.sched-slot').forEach(s => s.classList.remove('selected'));
+  btn.classList.add('selected');
+  btn.dataset.recruiter = recruiter; btn.dataset.slot = slot;
+  document.getElementById('sched-confirm').disabled = false;
+}
+
+function confirmSchedule() {
+  const btn = document.querySelector('.sched-slot.selected');
+  if (!btn) return;
+  const panel = document.querySelector('.sched-panel');
+  panel.innerHTML = `<div class="sched-confirmed">
+    <i class="fa-solid fa-calendar-check"></i>
+    <h3>Interview Scheduled!</h3>
+    <p>You'll meet with <strong>${btn.dataset.recruiter}</strong><br>on <strong>${btn.dataset.slot}</strong></p>
+    <p style="margin-top:8px;font-size:.7rem;color:var(--char)">A confirmation will be sent to you.<br>The recruiter will review your assessment before the call.</p>
+  </div>`;
+  document.getElementById('next-btn').disabled = false;
+  document.getElementById('next-btn').innerHTML = 'View Results <i class="fa-solid fa-arrow-right"></i>';
+}
+
+function skipChat() {
+  if (chatDone) return;
+  skipActive = true;
+  waiting = false;
+  disableInput();
+  document.querySelectorAll('.typing-row').forEach(el => el.remove());
+  // Fast-add all remaining messages
+  while (nextIdx < SCRIPT.length) {
+    const item = SCRIPT[nextIdx++];
+    addMsg('ai', item.text);
+    if (item.wait && item.prefill && !item.final) {
+      addMsg('you', item.prefill);
+    }
+  }
+  // Show final BTS state
+  const lastBTS = BTS[BTS.length - 1];
+  if (lastBTS?.onA) setBTS(lastBTS.onA);
+  setTimeout(finishInterview, 200);
+}
+
+/* ─── BTS PANEL ─────────────────────────── */
+function toggleBTS() {
+  btsOpen = !btsOpen;
+  document.getElementById('bts-panel').classList.toggle('open', btsOpen);
+  document.getElementById('bts-btn').classList.toggle('active', btsOpen);
+}
+
+function setBTS(html) {
+  if (!html) return;
+  const content = document.getElementById('bts-content');
+  const wrap = document.getElementById('bts-content-wrap');
+  const entry = document.createElement('div');
+  entry.className = 'bts-entry bts-new';
+  const now = new Date();
+  const ts = now.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false});
+  entry.innerHTML = `<div class="bts-ts">${ts}</div><div class="bts-msg">${html}</div>`;
+  content.appendChild(entry);
+  requestAnimationFrame(() => { wrap.scrollTop = wrap.scrollHeight; });
+}
+
+/* ─── PRE-SCREEN ENGINE ─────────────────── */
+function showNextPrescreen() {
+  if (prescreenNextIdx >= PRESCREEN.length) return;
+  const item = PRESCREEN[prescreenNextIdx++];
+  const btsIdx = prescreenNextIdx - 1;
+
+  const typingEl = addPrescreenTyping();
+  const delay = 800 + Math.random() * 400;
+
+  setTimeout(() => {
+    removeEl(typingEl);
+    addPrescreenMsg('ai', item.text);
+    setPBTS(PBTS[btsIdx]?.onQ);
+
+    if (item.final) {
+      finishPrescreen();
+    } else if (!item.wait) {
+      setTimeout(showNextPrescreen, 1500);
+    } else {
+      enablePrescreenInput(item.prefill);
+    }
+  }, delay);
+}
+
+function handlePrescreenSend() {
+  const inp = document.getElementById('psi');
+  const txt = inp.value.trim();
+  if (!txt || !prescreenWaiting) return;
+
+  const btsIdx = prescreenNextIdx - 1;
+  addPrescreenMsg('you', txt);
+  inp.value = ''; inp.style.height = 'auto';
+  disablePrescreenInput();
+  if (PBTS[btsIdx]?.onA) setPBTS(PBTS[btsIdx].onA);
+  setTimeout(showNextPrescreen, 1000);
+}
+
+function finishPrescreen() {
+  prescreenDone = true;
+  const area = document.getElementById('pscreen-input-area');
+  area.innerHTML = `<div class="complete-panel">
+    <h3><i class="fa-solid fa-circle-check" style="margin-right:5px"></i>Pre-Screen Complete</h3>
+    <p>All logistics items collected — no flags raised. Proceeding to the main behavioral assessment.</p>
+  </div>`;
+  updateNextBtn();
+}
+
+function addPrescreenMsg(type, text) {
+  const msgs = document.getElementById('pscreen-msgs');
+  const d = document.createElement('div'); d.className = `msg ${type}`;
+  const av = document.createElement('div'); av.className = `mv ${type}`;
+  av.innerHTML = type === 'ai' ? '<i class="fa-duotone fa-robot"></i>' : 'You';
+  const b = document.createElement('div'); b.className = 'mb';
+  const bt = document.createElement('div'); bt.className = 'mb-text'; bt.innerHTML = esc(text);
+  const ts = document.createElement('div'); ts.className = 'msg-ts';
+  const now = new Date();
+  ts.textContent = now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+  b.appendChild(bt); b.appendChild(ts);
+  d.appendChild(av); d.appendChild(b); msgs.appendChild(d); scrollPrescreenDown();
+}
+
+function addPrescreenTyping() {
+  const msgs = document.getElementById('pscreen-msgs');
+  const d = document.createElement('div'); d.className = 'typing-row';
+  const av = document.createElement('div'); av.className = 'mv ai';
+  av.innerHTML = '<i class="fa-duotone fa-robot"></i>';
+  const b = document.createElement('div'); b.className = 'typing-bub';
+  b.innerHTML = '<div class="td"></div><div class="td"></div><div class="td"></div>';
+  d.appendChild(av); d.appendChild(b); msgs.appendChild(d); scrollPrescreenDown(); return d;
+}
+
+function enablePrescreenInput(prefill) {
+  prescreenWaiting = true;
+  const inp = document.getElementById('psi');
+  const btn = document.getElementById('psb');
+  inp.disabled = false; btn.disabled = false;
+  if (prefill) { inp.value = prefill; inp.style.height = 'auto'; inp.style.height = Math.min(inp.scrollHeight, 100) + 'px'; }
+  inp.focus();
+}
+
+function disablePrescreenInput() {
+  prescreenWaiting = false;
+  document.getElementById('psi').disabled = true;
+  document.getElementById('psb').disabled = true;
+}
+
+function scrollPrescreenDown() {
+  const el = document.getElementById('pscreen-msgs');
+  requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; });
+}
+
+function togglePBTS() {
+  const p = document.getElementById('pbts-panel');
+  const btn = document.getElementById('pbts-btn');
+  p.classList.toggle('open');
+  btn.classList.toggle('active', p.classList.contains('open'));
+}
+
+function setPBTS(html) {
+  if (!html) return;
+  const content = document.getElementById('pbts-content');
+  const wrap = document.getElementById('pbts-content-wrap');
+  const entry = document.createElement('div');
+  entry.className = 'bts-entry bts-new';
+  const now = new Date();
+  const ts = now.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false});
+  entry.innerHTML = `<div class="bts-ts">${ts}</div><div class="bts-msg">${html}</div>`;
+  content.appendChild(entry);
+  requestAnimationFrame(() => { wrap.scrollTop = wrap.scrollHeight; });
+}
+
+/* ─── DASHBOARD ─────────────────────────── */
+function setDashDate() {
+  const el = document.getElementById('dash-date');
+  if (el) el.textContent = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+}
+
+function scoreColor(s) {
+  return s>=5?'#354A0A':s>=4?'#587322':s>=3?'#FFBB00':s>=2?'#F38454':'#8C152F';
+}
+
+function renderDashboard() {
+  renderCards();
+  drawRadar();
+  const circ = 2 * Math.PI * 39;
+  requestAnimationFrame(() => setTimeout(() => {
+    const ring = document.getElementById('gauge-ring');
+    ring.style.strokeDasharray = circ;
+    ring.style.strokeDashoffset = circ - (4/5) * circ;
+  }, 150));
+}
+
+function renderCards() {
+  const grid = document.getElementById('cards-grid');
+  grid.innerHTML = '';
+  SCORES.forEach((s, i) => {
+    const col = scoreColor(s.score);
+    const pct = s.score / 5 * 100;
+    const card = document.createElement('div');
+    card.className = 'sc-card';
+    card.style.borderLeftColor = col;
+    card.style.animationDelay = (i * 0.06) + 's';
+    card.innerHTML = `<div class="sc-top"><span class="sc-qlbl">${esc(s.label)}</span><span class="sc-score" style="color:${col}">${s.score}<span class="sc-denom">/5</span></span></div><div class="sc-title">${esc(s.title)}</div><div class="sc-bar"><div class="sc-bar-fill" data-pct="${pct}" style="background:${col}"></div></div><div class="sc-evid">${esc(s.evid)}</div><div class="sc-debug" id="dbg-${i}"><pre>${esc(s.debug)}</pre></div>`;
+    grid.appendChild(card);
+  });
+  setTimeout(() => {
+    grid.querySelectorAll('.sc-bar-fill').forEach(b => { b.style.width = b.dataset.pct + '%'; });
+  }, 200);
+}
+
+function toggleDebug() {
+  const on = document.getElementById('dbg-chk').checked;
+  document.querySelectorAll('.sc-debug').forEach(el => el.classList.toggle('show', on));
+}
+
+/* ─── RADAR CHART ───────────────────────── */
+function drawRadar() {
+  const container = document.getElementById('radar-container');
+  const W = 340, H = 340, cx = 170, cy = 170, R = 115;
+  const labels = ['Commitment','Self Aware.\n(Q1)','Learning\nAgility','Intelligence','Conscientious.','Self Aware.\n(Q4)','Agency'];
+  const scores = [4, 3, 4, 4, 4, 4, 5];
+  const n = labels.length;
+  const ns = 'http://www.w3.org/2000/svg';
+
+  function ang(i) { return (i * 360/n - 90) * Math.PI/180; }
+  function pt(r, i) { return [cx + r * Math.cos(ang(i)), cy + r * Math.sin(ang(i))]; }
+  function poly(pts, fill, stroke, sw) {
+    const el = document.createElementNS(ns, 'polygon');
+    el.setAttribute('points', pts.map(p=>p.join(',')).join(' '));
+    el.setAttribute('fill', fill); el.setAttribute('stroke', stroke);
+    el.setAttribute('stroke-width', sw); return el;
+  }
+
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.style.cssText = 'width:100%;max-width:340px;display:block';
+
+  // Grid rings
+  for (let ring = 1; ring <= 5; ring++) {
+    const r = R * ring / 5;
+    svg.appendChild(poly(Array.from({length:n},(_,i)=>pt(r,i)), 'none', '#D3C5BF', ring===5?1.5:.6));
+    // ring label on right axis (idx 2 ≈ right)
+    const [lx, ly] = pt(r, 2);
+    const t = document.createElementNS(ns, 'text');
+    t.setAttribute('x', lx+4); t.setAttribute('y', ly+3);
+    t.setAttribute('font-size','8'); t.setAttribute('fill','#75665F');
+    t.textContent = ring; svg.appendChild(t);
+  }
+
+  // Axes
+  for (let i = 0; i < n; i++) {
+    const [x,y] = pt(R,i);
+    const line = document.createElementNS(ns,'line');
+    line.setAttribute('x1',cx);line.setAttribute('y1',cy);
+    line.setAttribute('x2',x);line.setAttribute('y2',y);
+    line.setAttribute('stroke','#D3C5BF');line.setAttribute('stroke-width','0.75');
+    svg.appendChild(line);
+  }
+
+  // Data polygon (start scaled to 0, animate to full)
+  const dataPts = scores.map((s,i) => pt(R*s/5, i));
+  const dataPoly = poly(dataPts, 'rgba(255,74,0,0.15)', '#FF4A00', 2);
+  dataPoly.style.transformOrigin = `${cx}px ${cy}px`;
+  dataPoly.style.transform = 'scale(0)';
+  dataPoly.style.transition = 'transform 1s cubic-bezier(.4,0,.2,1)';
+  svg.appendChild(dataPoly);
+
+  // Score dots
+  scores.forEach((s,i) => {
+    const [x,y] = pt(R*s/5, i);
+    const c = document.createElementNS(ns,'circle');
+    c.setAttribute('cx',x);c.setAttribute('cy',y);c.setAttribute('r','5');
+    c.setAttribute('fill', scoreColor(s));c.setAttribute('stroke','white');c.setAttribute('stroke-width','1.5');
+    svg.appendChild(c);
+  });
+
+  // Labels
+  labels.forEach((lbl, i) => {
+    const [lx, ly] = pt(R*1.2, i);
+    const parts = lbl.split('\n');
+    const t = document.createElementNS(ns,'text');
+    t.setAttribute('x',lx);t.setAttribute('y',ly);
+    t.setAttribute('text-anchor','middle');t.setAttribute('dominant-baseline','middle');
+    t.setAttribute('font-size','9');t.setAttribute('font-weight','600');
+    t.setAttribute('fill','#4E403B');t.setAttribute('font-family','Inter,sans-serif');
+    parts.forEach((p, j) => {
+      const ts = document.createElementNS(ns,'tspan');
+      ts.setAttribute('x',lx);ts.setAttribute('dy', j===0 ? (parts.length>1?'-0.55em':'0') : '1.2em');
+      ts.textContent = p; t.appendChild(ts);
+    });
+    svg.appendChild(t);
+  });
+
+  container.appendChild(svg);
+  requestAnimationFrame(() => setTimeout(() => { dataPoly.style.transform = 'scale(1)'; }, 250));
+}
+
+/* ─── CONFETTI ──────────────────────────── */
+function launchConfetti() {
+  const layer = document.getElementById('confetti');
+  const colors = ['#FF4A00','#FFBB00','#587322','#547099','#F38454','#8C152F','#fff'];
+  for (let i = 0; i < 80; i++) {
+    setTimeout(() => {
+      const p = document.createElement('div'); p.className = 'conf';
+      p.style.left = Math.random()*100+'vw';
+      p.style.width = (5+Math.random()*8)+'px'; p.style.height = (5+Math.random()*9)+'px';
+      p.style.background = colors[Math.floor(Math.random()*colors.length)];
+      p.style.borderRadius = Math.random()>.5?'50%':'2px';
+      const dur = 1.5+Math.random()*2;
+      p.style.animationDuration = dur+'s'; p.style.animationDelay = Math.random()*.3+'s';
+      layer.appendChild(p); setTimeout(()=>p.remove(), (dur+.5)*1000);
+    }, i*25);
+  }
+}
+
+/* ─── UTILS ─────────────────────────────── */
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+</script>
+</body>
+</html>
